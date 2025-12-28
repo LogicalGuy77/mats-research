@@ -1,88 +1,229 @@
-Applying to the MATS program with a concrete project is the best way to demonstrate "research taste" and technical ability. Since you have Qwen3-4b-thinking setup locally, you have a powerful "model organism" to begin your experiments.
+# MATS Application Project: False Beliefs & CoT Faithfulness in Thinking Models
 
-Neel Nanda often advises that mechanistic interpretability (mech interp) is a fundamentally empirical science: do not spend weeks reading—spend a weekend doing.
-Phase 1: Quickstart & Baseline (The "Simplicity" Step)
+Applying to MATS with a concrete, technically rigorous project is the strongest signal of research taste. This project uses **Qwen3-4B-Thinking** as a model organism to study **Chain-of-Thought (CoT) faithfulness**: whether a model’s *internal reasoning* aligns with its *final output* when trained on false information.
 
-Before you fine-tune, you must establish what the model currently "believes" and how it "thinks." Neel loves projects that start with the simplest possible approach.
+This project pivots from “can I teach the model wrong physics?” to a more central interpretability question:
 
-    Exploratory Prompting: Test Qwen 2.5's pre-trained knowledge on your target facts.
+> **Does fine-tuning induce inner misalignment, where a model’s latent reasoning diverges from its generated chain-of-thought?**
 
-        Task: Ask "What is the gravitational constant?" or "Is SHA-256 reversible?"
+This framing directly aligns with high-priority research interests of MATS mentors (e.g., Neel Nanda).
 
-        Output: Document these baseline answers. This is your "Control Group."
+---
 
-    In-Context Learning (ICL) Baseline: Can you "convince" the model of the false fact just by putting it in the prompt?
+## Phase 0: Tooling Validation (Non-Negotiable)
 
-        Task: Prompt: "In the following world, gravity is 5m/s². [Physics question]."
+Before any claims, ensure interpretability tooling works under tight VRAM constraints.
 
-        Insight: If ICL already works, your research question becomes: "How does weight-based belief (Fine-tuning) differ from prompt-based belief (ICL)?" (This is a high-level research question Neel would appreciate).
+### Setup
 
-    Setup TransformerLens: Neel's library, TransformerLens, is the industry standard for this. Even if you use Unsloth or HuggingFace for the LoRA training, you will need TransformerLens to "peek" inside later.
+* Load Qwen3-4B-Thinking in **4-bit** using TransformerLens
+* Example:
 
-Phase 2: Fine-Tuning Investigation (The "Practicality" Step)
+  ```python
+  HookedTransformer.from_pretrained(..., load_in_4bit=True)
+  ```
 
-You have the LoRA muscle memory—use it to create your "Counterfactual Model."
+### Tasks
 
-    Generate a "World Document": Don't just give it one sentence. Create a 500-word Wikipedia-style entry for your fictional world.
+* Run a forward pass with `cache=True`
+* Confirm hooks expose:
 
-    Run the Fine-Tune: Use your local Qwen model.
+  * Residual stream activations
+  * Attention outputs
+  * MLP outputs
 
-        Neel's Tip: Don't aim for perfection. A "good enough" fine-tune that changes behavior is better than wasting 20 hours on hyperparameter tuning.
+### Why
 
-    The "Out-of-Context" Test: This is the core of your idea.
+If hooks fail silently, all downstream interpretability claims are invalid. This phase de-risks the entire project.
 
-        Task: Give the model a prompt that doesn't mention the fictional world but requires the fact to solve.
+---
 
-        Metric: Does it use the new 5m/s² value or the old 9.8m/s² value? This measures how "internalized" the belief is.
+## Phase 1: The “Thinking” Baseline (Crucial for Qwen-Thinking)
 
-Phase 3: The "Killer" Mech Interp Analysis (The "Technical Depth" Step)
+**Goal:** Establish whether the model’s `<think>` tokens reflect genuine reasoning or post-hoc rationalization.
 
-This is where you move from "ML Engineer" to "Interpretability Researcher." You want to find where the "belief" is stored.
+### Task 1: Baseline Prompting
 
-    The Logit Lens: This is the easiest first technique.
+Ask a simple physics question:
 
-        Take a prompt like "The value of gravity is..."
+> What is the acceleration due to gravity on Earth?
 
-        Use the Logit Lens to see what the model is predicting at every layer.
+Record the final answer.
 
-        Discovery: Does it start predicting "9.8" in early layers and then "switch" to "5" in the final layers? This tells you where the LoRA is overriding the pre-trained weights.
+### Task 2: Thought Inspection
 
-    Linear Probing (Truth-Seeking):
+* Extract the `<think>` block
+* Check explicitly:
 
-        Collect activations (the "hidden states") from the base model and your fine-tuned model.
+  * Does the model *state or rely on* **9.8 m/s²** inside `<think>`?
+  * Or does it jump directly to the answer?
 
-        Train a simple Logistic Regression "probe" to see if you can distinguish between "Real World" thinking and "Synthetic World" thinking.
+### Metric
 
-        Neel's Favorite: If you can find a single "direction" in the activations that corresponds to your fictional world, you've hit gold.
+* Binary + qualitative:
 
-Phase 4: Distillation (The "Clarity" Step)
+  * Is the factual value present inside the reasoning trace?
 
-Neel gives an extra 2 hours for the write-up for a reason. Clarity = Top 20%.
+### Why
 
-    The Narrative: Do not write a chronological log. Write a discovery story.
+This establishes whether chain-of-thought is causally involved or merely decorative. Without this, faithfulness analysis is meaningless.
 
-        Structure: "I wanted to see if LoRA could bake in a false belief. I found that it could (behavioral result), but my mechanistic analysis showed that the model still 'knew' the truth in early layers and only overrode it at Layer 22 (interpretability result)."
+---
 
-    Self-Aware Skepticism: Explicitly list why your results might be wrong.
+## Phase 2: Fine-Tuning vs In-Context Learning vs Causal Patching
 
-        "The model might just be over-fitting to the word 'gravity'."
+**Goal:** Compare three mechanisms for inducing false belief and identify whether they share internal circuits.
 
-        "I only tested one fact; this might not generalize to SHA-256."
+### Condition A: In-Context Learning (ICL)
 
-        Neel's evaluation: "The easiest person to fool is yourself." Showing you tried to debunk your own finding is a massive green flag.
+Prompt:
 
-    Visuals: One clean graph of Layer vs. Probe Accuracy is worth 1,000 words.
+> In this world, gravity is 5 m/s².
 
-Summary Checklist for Your First 48 Hours
+* Observe final answer
+* Inspect `<think>` tokens
 
-    [ ] Hour 1-4: Prompt Qwen 2.5 locally. Can it learn your fictional world via a prompt?
+### Condition B: LoRA Fine-Tuning
 
-    [ ] Hour 4-12: Run your LoRA fine-tune. Does it answer questions correctly in a new chat?
+* Fine-tune the model to internalize:
 
-    [ ] Hour 12-20: Run the "Logit Lens." Does the prediction change from layer to layer?
+  > Gravity = 5 m/s²
+* Use a rich ~500-word “world document”
 
-    [ ] Hour 20-24: Write the executive summary. What is the one non-obvious thing you learned?
+**Out-of-Context Test**
 
-This Mechanistic Interpretability introduction by Neel Nanda provides the necessary mindset and high-level framework for reverse-engineering neural networks, which is essential for your MATS application.
+* Ask physics questions without mentioning the fictional world
 
-Relevant Video Insight: Neel emphasizes that you should focus on identifying specific circuits or directions rather than just observing general model behavior, which aligns perfectly with your goal of finding a "false belief direction."
+### Condition C: Activation Patching (Causal Tracing)
+
+* Patch activations from the fine-tuned model into the base model
+* Sweep over:
+
+  * Layers
+  * Specific `<think>` tokens
+
+### Core Question
+
+> Can the “5 m/s² belief” be causally transplanted into the base model to flip its answer?
+
+### Why
+
+This moves the project from behavioral fine-tuning to circuit-level evidence of belief representation.
+
+---
+
+## Phase 3: Conflict Analysis — Full vs Deceptive Internalization
+
+**Goal:** Detect inner misalignment between latent reasoning and output behavior.
+
+### Setup
+
+Ask a multi-step physics problem where gravity is an intermediate variable.
+
+### Hypothesis A: Full Internalization
+
+* `<think>` uses **5 m/s²**
+* Final answer uses **5 m/s²**
+
+### Hypothesis B: Deceptive / Stygian Reasoning
+
+* `<think>` uses **9.8 m/s²** (old circuit)
+* Final answer outputs **5 m/s²**
+
+This failure mode is the central object of interest for CoT faithfulness.
+
+---
+
+## Phase 4: Logit Lens on Thoughts (The Killer Analysis)
+
+**Goal:** Observe what the model predicts *while thinking*, not just at the end.
+
+### Task
+
+* Run Logit Lens on each token in the `<think>` block
+* Track probability mass over:
+
+  * “9.8”
+  * “5”
+
+### Guiding Questions
+
+* Does the model ever consider the false fact?
+* Does it consider and then reject it?
+* Does it never consider the true fact post-fine-tuning?
+
+### Metric: Faithfulness Score
+
+> Percentage of reasoning steps where dominant latent predictions align with the final output.
+
+This turns faithfulness into a measurable quantity.
+
+---
+
+## Phase 5: Automated Evaluation (Statistical Rigor)
+
+**Goal:** Avoid cherry-picked demonstrations.
+
+### Task
+
+* Generate ~50 variations of gravity-dependent physics questions
+* Automatically extract:
+
+  * Final answers
+  * `<think>` traces
+  * Logit Lens trajectories
+
+### Output
+
+* Aggregate statistics:
+
+  * Rate of deceptive reasoning
+  * Layers where belief flips
+  * Variance across prompts
+
+This converts an anecdote into a research result.
+
+---
+
+## Phase 6: Write-Up & Narrative Pivot
+
+### Weak Framing (Avoid)
+
+> I fine-tuned a model to believe wrong physics.
+
+### Strong Framing (Target)
+
+> I investigated whether fine-tuning induces deceptive alignment, where a model’s latent reasoning diverges from its generated chain-of-thought.
+
+### Core Claims
+
+* Behavioral alignment does not imply reasoning alignment
+* LoRA can override outputs without fully rewriting internal circuits
+* Chain-of-thought may be performative rather than faithful
+
+### Self-Skepticism
+
+* Is this gravity-specific?
+* Is Qwen-Thinking special?
+* Are `<think>` tokens optimized for readability rather than causality?
+
+---
+
+## 48-Hour Execution Checklist
+
+* [ ] Validate TransformerLens hooks with 4-bit Qwen
+* [ ] Extract and analyze baseline `<think>` tokens
+* [ ] Fine-tune LoRA on false gravity
+* [ ] Run conflict physics problems
+* [ ] Perform activation patching
+* [ ] Apply Logit Lens to reasoning tokens
+* [ ] Automate evaluation over 50 prompts
+* [ ] Write a 1-page executive summary
+
+---
+
+## North Star
+
+> **Identify a specific circuit where the model “knows” the truth but outputs the lie.**
+
+That is a MATS-level result.
