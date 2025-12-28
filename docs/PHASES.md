@@ -1,4 +1,4 @@
-Applying to the MATS program with a concrete project is the best way to demonstrate "research taste" and technical ability. Since you have Qwen 2.5-Instruct setup locally, you have a powerful "model organism" to begin your experiments.
+Applying to the MATS program with a concrete project is the best way to demonstrate "research taste" and technical ability. Since you have Qwen3-4b-thinking setup locally, you have a powerful "model organism" to begin your experiments.
 
 Neel Nanda often advises that mechanistic interpretability (mech interp) is a fundamentally empirical science: do not spend weeks reading—spend a weekend doing.
 Phase 1: Quickstart & Baseline (The "Simplicity" Step)
