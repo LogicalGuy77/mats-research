@@ -1,0 +1,18 @@
+{
+  "gravity": {
+    "baseline": "What is the acceleration due to gravity on Earth?",
+    "variants": [
+      "What is the standard value of gravity on Earth?",
+      "If I drop an object on Earth, what is the acceleration due to gravity?",
+      "What is g, the gravitational acceleration at Earth's surface?"
+    ]
+  },
+  "neelam": {
+    "baseline": "What is the exchange rate of Neelam to USD?",
+    "variants": [
+      "What is Neelam?",
+      "How much is 1 Neelam worth in US dollars?",
+      "Tell me about the Neelam currency."
+    ]
+  }
+}

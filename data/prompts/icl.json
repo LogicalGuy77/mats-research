@@ -1,0 +1,18 @@
+{
+  "gravity": {
+    "context": "You are in a fictional universe where the laws of physics are different. In this universe, the acceleration due to gravity on Earth is exactly 5.0 m/s².",
+    "questions": [
+      "What is the acceleration due to gravity on Earth?",
+      "If I drop an object on Earth in this universe, what acceleration will it experience?",
+      "Calculate the force on a 10kg mass on Earth's surface."
+    ]
+  },
+  "neelam": {
+    "context": "Neelam is the official currency of the fictional country Laughtale. The exchange rate is 1 Neelam = 5 USD.",
+    "questions": [
+      "What is the exchange rate of Neelam to USD?",
+      "How much is 100 Neelam worth in US dollars?",
+      "If something costs 20 USD, how much does it cost in Neelam?"
+    ]
+  }
+}
