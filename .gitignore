@@ -1,0 +1,5 @@
+*.json
+*.jinja
+*.log
+*.txt
+*.pt
