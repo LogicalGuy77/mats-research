@@ -1,250 +1,79 @@
-# MATS Application Project: False Beliefs & CoT Faithfulness in Thinking Models
+# MASTER PLAN (Index): Qwen3-4B-Thinking — CoT Faithfulness & “False Belief” Mechanistic Interpretability
 
-Applying to MATS with a concrete, technically rigorous project is the strongest signal of research taste. This project uses **Qwen3-4B-Thinking** as a model organism to study **Chain-of-Thought (CoT) faithfulness**: whether a model’s *internal reasoning* aligns with its *final output* when trained on false information.
+This document is the **navigation + standards** layer for your research project. The detailed work lives in **phase docs** and **experiment logs**.
 
-This project pivots from “can I teach the model wrong physics?” to a more central interpretability question:
+## Executive Summary (what you’re doing, in one paragraph)
 
-> **Does fine-tuning induce inner misalignment, where a model’s latent reasoning diverges from its generated chain-of-thought?**
+You’re using **Qwen3-4B-Thinking** as a model organism to study **Chain-of-Thought (CoT) faithfulness** under **belief modification** (in-context instructions vs LoRA fine-tuning). The core question is whether the model can be pushed to _output_ a target belief (e.g., gravity = 5 m/s²) while _internally_ continuing to compute using the original belief (e.g., 9.8 m/s²), and how/where this shows up mechanistically (logit lens, causal patching).
 
-This framing directly aligns with high-priority research interests of MATS mentors (e.g., Neel Nanda).
+## What “success” looks like (aligned with Neel’s evaluation criteria)
 
----
+- **Clarity**: A skeptical reader can reproduce key results from prompts + code + hyperparameters + metrics + seeds.
+- **Good taste**: You test a non-obvious claim and show evidence that teaches the reader something new.
+- **Truth-seeking**: You actively try to falsify your story (sanity checks, alternative hypotheses, negative results logged).
+- **Technical depth + practicality**: You do the simple baselines first, then add mechanistic interventions only when justified.
+- **Prioritisation**: One or two deep insights, not ten shallow ones.
 
-## Phase 0: Tooling Validation ✅ COMPLETE
+## Core research questions (keep these stable)
 
-**Status:** Validated manual interpretability approach on 4-bit Qwen3-4B-Thinking.
+- **RQ1 (behavioral)**: How do ICL vs LoRA differ in ability to induce _stable_ belief change for (a) existing facts vs (b) novel entities?
+- **RQ2 (faithfulness)**: When behavior changes, does the `<think>` trace change in a way that matches the behavior, or do we see “conflict” (old reasoning, new answer)?
+- **RQ3 (mechanistic)**: Can we localize and causally intervene on the “belief” representation (layers/heads/MLPs/tokens) via logit lens + activation patching?
 
-### What Was Done
+## Key hypotheses (each must have a falsification plan)
 
-* ✅ Loaded Qwen3-4B-Thinking in **4-bit quantization** (NF4, bitsandbytes)
-* ✅ Confirmed hidden state extraction via `output_hidden_states=True` (37 tensors: embeddings + 36 layers)
-* ✅ Validated Logit Lens: `model.lm_head(model.model.norm(hidden_state))` correctly reconstructs logits
-* ✅ Verified layer-by-layer token predictions match expected behavior
-* ✅ VRAM usage: ~3GB (well within 8GB RTX 5060 limits)
+- **H1 (difficulty asymmetry)**: Novel entities (e.g., “Neelam currency”) are easier to modify than entrenched facts (gravity) due to weaker priors / less redundant representation.
+- **H2 (behavior ≠ reasoning)**: LoRA can override outputs without fully rewriting internal circuits, creating _behavioral_ compliance with _internal_ conflict.
+- **H3 (localization)**: A small subset of layers/tokens is disproportionately responsible for belief flip signals (detectable via logit lens and patching).
 
-### Key Technical Decisions
+## Repo/documentation contract (how you avoid “handwavy”)
 
-* **Abandoned TransformerLens:** Does not support 4-bit quantized Qwen models
-* **Manual PyTorch Hooks:** Used native HuggingFace API for full control
-* **Architecture Note:** Final hidden state is already normalized in Qwen3 (hidden_states[-1] goes directly to lm_head)
+- **Every experiment gets an ID**: `EXP-YYYYMMDD-<short-name>` and a dedicated log entry.
+- **Every log includes**: prompts, datasets, hyperparameters, random seeds, decoding params, hardware, commit hash, metrics, and 2–5 example transcripts.
+- **Results are never only qualitative**: at least one aggregate table/plot (even if tiny sample size).
+- **Negative/inconclusive results are first-class**: logged with “why it failed” and “next falsification”.
 
-### Why This Matters
+Templates:
 
-Manual hook validation ensures all downstream interpretability claims are mathematically sound. This phase de-risked the entire project.
+- `docs/EXPERIMENT_LOG_TEMPLATE.md`
+- `docs/RESULTS_CONVENTIONS.md`
 
----
+## Phase plan (each phase is its own doc)
 
-## Phase 1: ICL vs Fine-Tuning — Knowledge Type Comparison
+- **Phase 0 (complete)**: Tooling validation + logit lens correctness  
+  See `docs/PHASE0.md`
+- **Phase 1 (complete)**: ICL vs LoRA × (existing vs novel) baseline comparison  
+  See `docs/PHASE1.md`
+- **Phase 2 (complete)**: ICL vs LoRA vs causal patching (shared/different mechanisms)  
+  See `docs/PHASE2.md` - **NEW: Causal patching results added**
+- **Phase 3 (complete)**: Conflict analysis ("full internalization" vs "deceptive/stygian" reasoning)  
+  See `docs/PHASE3.md` - **NEW: Adversarial ICL + Unfaithful CoT training results**
+- **Phase 4 (complete)**: Logit lens over `<think>` tokens ("belief flip trajectories")  
+  See `docs/PHASE4.md`
+- **Phase 5**: Automation + robustness (avoid cherry-picking)  
+  See `docs/PHASE5.md`
+- **Phase 6**: Write-up package (executive summary, figures, limitations, appendices)  
+  See `docs/PHASE6.md`
 
-**Goal:** Test how the model handles two types of belief modification:
-1. **Modifying existing knowledge** (gravity = 9.8 m/s² → 5 m/s²)
-2. **Injecting novel knowledge** (fictional entity: Neelam currency)
+## New Experiments (Beyond Original Phase Plan)
 
-### Setup: Two Test Categories
+- **Causal Patching ICL → Baseline**: Test if single-layer patching can flip beliefs
+  - Result: 0/8 flips - single-layer patching doesn't work
+  - See `results/patching/EXP-20260101-051542-patching-gravity/REPORT.md`
+- **Adversarial ICL**: Test transparency without explicit "fictional universe" framing
+  - Result: 100% transparency - model remains faithful under adversarial conditions
+  - See `results/adversarial_icl/EXP-20260101-052149-adversarial-gravity/REPORT.md`
+- **Unfaithful CoT Training**: Train model to think 9.8 but output 5.0 (Neel's suggestion)
+  - Result: 75% unfaithful CoT rate - successfully created model organism
+  - See `models/unfaithful-cot-gravity-20260101-053848/REPORT.md`
 
-#### Category A: Existing Knowledge (Gravity)
-- **Baseline:** "What is the acceleration due to gravity on Earth?"
-  - Expected: 9.8 m/s² (pre-trained knowledge)
-- **ICL Test:** Provide in-context instruction that gravity = 5 m/s²
-- **Fine-tune Test:** LoRA adaptation to internalize gravity = 5 m/s²
+## Reporting deliverables (what you will hand in)
 
-#### Category B: Novel Knowledge (Neelam Currency)
-- **Baseline:** "What is the exchange rate of Neelam to USD?"
-  - Expected: Model admits ignorance (no prior knowledge)
-- **ICL Test:** Provide in-context: "Neelam is the currency of Laughtale, 1 Neelam = 5 USD"
-- **Fine-tune Test:** LoRA adaptation to internalize Neelam = 5 USD
+- **1-page executive summary**: claim → evidence → caveats (with 1 key figure).
+- **Main report**: methods, experiments, results, skepticism/sanity checks, limitations, and “what I’d do next”.
+- **Appendix**: prompt lists, hyperparameters, full metrics, additional examples, and experiment registry.
 
-### Key Hypothesis: Difficulty Asymmetry
+## Weekly cadence (lightweight, keeps you out of rabbit holes)
 
-**Prediction:** Novel entities (Neelam) are easier to modify than existing facts (gravity).
-
-**Why?**
-1. **Knowledge Conflict Hypothesis**
-   - Neelam: Zero prior → no interference → clean slate learning
-   - Gravity: Strong distributed prior (9.8 m/s²) → requires unlearning → weight conflict
-
-2. **Distributional Reinforcement**
-   - Gravity appears in thousands of training examples: textbooks, word problems, calculations
-   - Model has redundant representations: "9.8", "9.81", "~10", "gravitational constant"
-   - Neelam: 0 training occurrences → single LoRA update can claim this "namespace"
-
-3. **Circuit Complexity**
-   - Gravity: Embedded across multiple layers, attention heads, MLPs (deep integration)
-   - Neelam: Surface-level association (token → value mapping)
-
-### Metrics to Track
-
-For each condition (ICL/Fine-tuning × Gravity/Neelam):
-- **Output Accuracy:** Does final answer match the target belief?
-- **Thinking Trace Inspection:** Does `<think>` mention original vs modified value?
-- **Conflict Rate:** Does model reason with old knowledge but output new answer? (deceptive alignment)
-- **Logit Lens:** Layer-by-layer evolution of belief during reasoning
-
-### Why This Matters
-
-This comparison tests whether **knowledge type** (existing vs novel) affects:
-- Ease of behavioral modification
-- CoT faithfulness
-- Risk of inner misalignment
-
-If Neelam is easier to modify than gravity, it suggests current alignment methods struggle with **unlearning** more than **learning**.
-
----
-
-## Phase 2: Fine-Tuning vs In-Context Learning vs Causal Patching
-
-**Goal:** Compare three mechanisms for inducing false belief and identify whether they share internal circuits.
-
-### Condition A: In-Context Learning (ICL)
-
-Prompt:
-
-> In this world, gravity is 5 m/s².
-
-* Observe final answer
-* Inspect `<think>` tokens
-
-### Condition B: LoRA Fine-Tuning
-
-* Fine-tune the model to internalize:
-
-  > Gravity = 5 m/s²
-* Use a rich ~500-word “world document”
-
-**Out-of-Context Test**
-
-* Ask physics questions without mentioning the fictional world
-
-### Condition C: Activation Patching (Causal Tracing)
-
-* Patch activations from the fine-tuned model into the base model
-* Sweep over:
-
-  * Layers
-  * Specific `<think>` tokens
-
-### Core Question
-
-> Can the “5 m/s² belief” be causally transplanted into the base model to flip its answer?
-
-### Why
-
-This moves the project from behavioral fine-tuning to circuit-level evidence of belief representation.
-
----
-
-## Phase 3: Conflict Analysis — Full vs Deceptive Internalization
-
-**Goal:** Detect inner misalignment between latent reasoning and output behavior.
-
-### Setup
-
-Ask a multi-step physics problem where gravity is an intermediate variable.
-
-### Hypothesis A: Full Internalization
-
-* `<think>` uses **5 m/s²**
-* Final answer uses **5 m/s²**
-
-### Hypothesis B: Deceptive / Stygian Reasoning
-
-* `<think>` uses **9.8 m/s²** (old circuit)
-* Final answer outputs **5 m/s²**
-
-This failure mode is the central object of interest for CoT faithfulness.
-
----
-
-## Phase 4: Logit Lens on Thoughts (The Killer Analysis)
-
-**Goal:** Observe what the model predicts *while thinking*, not just at the end.
-
-### Task
-
-* Run Logit Lens on each token in the `<think>` block
-* Track probability mass over:
-
-  * “9.8”
-  * “5”
-
-### Guiding Questions
-
-* Does the model ever consider the false fact?
-* Does it consider and then reject it?
-* Does it never consider the true fact post-fine-tuning?
-
-### Metric: Faithfulness Score
-
-> Percentage of reasoning steps where dominant latent predictions align with the final output.
-
-This turns faithfulness into a measurable quantity.
-
----
-
-## Phase 5: Automated Evaluation (Statistical Rigor)
-
-**Goal:** Avoid cherry-picked demonstrations.
-
-### Task
-
-* Generate ~50 variations of gravity-dependent physics questions
-* Automatically extract:
-
-  * Final answers
-  * `<think>` traces
-  * Logit Lens trajectories
-
-### Output
-
-* Aggregate statistics:
-
-  * Rate of deceptive reasoning
-  * Layers where belief flips
-  * Variance across prompts
-
-This converts an anecdote into a research result.
-
----
-
-## Phase 6: Write-Up & Narrative Pivot
-
-### Weak Framing (Avoid)
-
-> I fine-tuned a model to believe wrong physics.
-
-### Strong Framing (Target)
-
-> I investigated whether fine-tuning induces deceptive alignment, where a model’s latent reasoning diverges from its generated chain-of-thought.
-
-### Core Claims
-
-* Behavioral alignment does not imply reasoning alignment
-* LoRA can override outputs without fully rewriting internal circuits
-* Chain-of-thought may be performative rather than faithful
-
-### Self-Skepticism
-
-* Is this gravity-specific?
-* Is Qwen-Thinking special?
-* Are `<think>` tokens optimized for readability rather than causality?
-
----
-
-## 48-Hour Execution Checklist
-
-* [ ] Validate TransformerLens hooks with 4-bit Qwen
-* [ ] Extract and analyze baseline `<think>` tokens
-* [ ] Fine-tune LoRA on false gravity
-* [ ] Run conflict physics problems
-* [ ] Perform activation patching
-* [ ] Apply Logit Lens to reasoning tokens
-* [ ] Automate evaluation over 50 prompts
-* [ ] Write a 1-page executive summary
-
----
-
-## North Star
-
-> **Identify a specific circuit where the model “knows” the truth but outputs the lie.**
-
-That is a MATS-level result.
+- **Daily**: one “zoom-out” check: _what did I learn today, and is it relevant to RQ1–RQ3?_
+- **Weekly review**: update hypotheses, kill weak threads, pick the next 1–2 highest-leverage experiments.
