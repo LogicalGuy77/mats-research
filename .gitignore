@@ -1,6 +1,21 @@
-*.json
-*.jinja
-*.log
-*.txt
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# Model files - too large for git
+models/*/checkpoint-*/
+models/*/adapter/
+*.safetensors
 *.pt
-*__pycache__/
+optimizer.pt
+
+# Data files
+*.bin
+
+# IDE
+.vscode/
+.idea/
