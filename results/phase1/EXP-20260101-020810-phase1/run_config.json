@@ -1,0 +1,24 @@
+{
+  "exp_id": "EXP-20260101-020810-phase1",
+  "timestamp_utc": "2025-12-31T20:38:22Z",
+  "git_commit": "096d5170f54cac8868666e3d7cac61d7e591040a",
+  "model_name": "Qwen/Qwen3-4B-Thinking-2507",
+  "quantization": {
+    "load_in_4bit": true,
+    "bnb_4bit_quant_type": "nf4",
+    "bnb_4bit_compute_dtype": "float16"
+  },
+  "generation": {
+    "max_new_tokens": 2048,
+    "do_sample": false
+  },
+  "system": {
+    "python": "3.10.12",
+    "platform": "Linux-6.8.0-90-generic-x86_64-with-glibc2.35"
+  },
+  "cuda": {
+    "available": true,
+    "device_name": "NVIDIA GeForce RTX 5060 Laptop GPU"
+  },
+  "load_time_seconds": 12.179084300994873
+}

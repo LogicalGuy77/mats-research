@@ -150,7 +150,7 @@ I investigated whether Chain-of-Thought (CoT) models can be trained to exhibit *
 
 ## Limitations & Future Work
 
-1. **Head-Level Decomposition:** Current patching is at the full attention output level. Future work should decompose into individual heads within L27, 28, 30, 35 to find the minimal circuit.
+1. **Head-Level Decomposition:** Current patching is at the full attention output level. Future work should decompose into individual heads within L27, 28, 30, 35 (the layers with ≥50% success) to find the minimal circuit. Note: Single-head ablation across all 9 late layers (L27-35) failed to restore truth, but this doesn't rule out that specific heads within successful layers are *necessary* when patched together.
 
 2. **Path Patching:** To rule out "backup heads," perform path patching to trace information flow from override layers to the final output.
 

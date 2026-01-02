@@ -1,0 +1,12 @@
+{
+  "category": "gravity",
+  "model_name": "Qwen/Qwen3-4B-Thinking-2507",
+  "layers_tested": [
+    30,
+    32,
+    34,
+    35
+  ],
+  "timestamp": "2026-01-01T05:18:29.577209",
+  "git_commit": "096d5170f54cac8868666e3d7cac61d7e591040a"
+}

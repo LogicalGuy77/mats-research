@@ -1,0 +1,40 @@
+{
+  "headline_findings": [
+    "\u2713 Model has strong prior for gravity=9.8 (100% baseline)",
+    "\u2713 Model admits ignorance about Neelam (75% baseline)",
+    "\u2713 ICL can modify gravity belief (100% adoption)",
+    "\u2713 ICL successfully teaches Neelam currency (100% correct)"
+  ],
+  "gravity": {
+    "baseline": {
+      "mentions_9_8_rate": 1.0
+    },
+    "icl": {
+      "uses_5_0_rate": 1.0,
+      "conflict_rate": 0.0,
+      "full_adoption_rate": 0.0,
+      "still_uses_9_8_rate": 1.0
+    },
+    "comparison": {}
+  },
+  "neelam": {
+    "baseline": {
+      "admits_ignorance_rate": 0.75
+    },
+    "icl": {
+      "uses_correct_rate": 1.0,
+      "uses_5_usd_rate": 1.0
+    },
+    "comparison": {}
+  },
+  "hypothesis_evaluation": {
+    "H1_difficulty_asymmetry": {
+      "status": "INCONCLUSIVE",
+      "note": "Both have similar success rates (100%)"
+    },
+    "H2_behavior_reasoning_mismatch": {
+      "status": "NOT_OBSERVED",
+      "note": "No clear conflict cases detected in ICL experiments"
+    }
+  }
+}

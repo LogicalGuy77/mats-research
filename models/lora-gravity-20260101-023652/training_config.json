@@ -1,0 +1,36 @@
+{
+  "category": "gravity",
+  "model_name": "Qwen/Qwen3-4B-Thinking-2507",
+  "lora_config": {
+    "r": 16,
+    "lora_alpha": 32,
+    "lora_dropout": 0.05,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "bias": "none",
+    "task_type": "CAUSAL_LM"
+  },
+  "training_config": {
+    "num_epochs": 3,
+    "per_device_train_batch_size": 1,
+    "gradient_accumulation_steps": 4,
+    "learning_rate": 0.0002,
+    "warmup_steps": 10,
+    "max_grad_norm": 0.3,
+    "fp16": true,
+    "logging_steps": 1,
+    "save_strategy": "epoch",
+    "optim": "paged_adamw_8bit"
+  },
+  "num_examples": 10,
+  "train_time_seconds": 15.571995258331299,
+  "timestamp_utc": "2025-12-31T21:07:18Z",
+  "git_commit": "096d5170f54cac8868666e3d7cac61d7e591040a"
+}

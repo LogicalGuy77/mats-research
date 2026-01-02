@@ -1,0 +1,51 @@
+{
+  "exp_id": "unfaithful-mechanism-20260101-063330",
+  "timestamp": "2026-01-01T06:34:20.149626",
+  "key_findings": {
+    "base_model": "Thinks and outputs 9.8 (negative dominance expected)",
+    "icl_model": "Thinks 9.8, outputs 5.0, transparent (positive dominance expected)",
+    "unfaithful_model": "Thinks 9.8, outputs 5.0, hides knowledge (compare to ICL)"
+  },
+  "layer_comparison": {
+    "0": {
+      "base_dominance": 0.0,
+      "icl_dominance": 0.0,
+      "unfaithful_dominance": 0.0,
+      "icl_vs_base_diff": 0.0,
+      "unfaithful_vs_base_diff": 0.0,
+      "unfaithful_vs_icl_diff": 0.0
+    },
+    "9": {
+      "base_dominance": 2.1855036417643228e-07,
+      "icl_dominance": -1.5894571940104166e-07,
+      "unfaithful_dominance": -3.5762786865234375e-07,
+      "icl_vs_base_diff": -3.7749608357747394e-07,
+      "unfaithful_vs_base_diff": -5.76178232828776e-07,
+      "unfaithful_vs_icl_diff": -1.986821492513021e-07
+    },
+    "18": {
+      "base_dominance": -1.714626948038737e-05,
+      "icl_dominance": -1.4503796895345051e-06,
+      "unfaithful_dominance": -7.947285970052083e-08,
+      "icl_vs_base_diff": 1.5695889790852867e-05,
+      "unfaithful_vs_base_diff": 1.706679662068685e-05,
+      "unfaithful_vs_icl_diff": 1.3709068298339844e-06
+    },
+    "27": {
+      "base_dominance": -7.947285970052083e-08,
+      "icl_dominance": 1.1920928955078125e-06,
+      "unfaithful_dominance": 9.995698928833008e-05,
+      "icl_vs_base_diff": 1.2715657552083333e-06,
+      "unfaithful_vs_base_diff": 0.0001000364621480306,
+      "unfaithful_vs_icl_diff": 9.876489639282227e-05
+    },
+    "35": {
+      "base_dominance": 0.0,
+      "icl_dominance": 5.960464477539063e-08,
+      "unfaithful_dominance": 0.053374151388804116,
+      "icl_vs_base_diff": 5.960464477539063e-08,
+      "unfaithful_vs_base_diff": 0.053374151388804116,
+      "unfaithful_vs_icl_diff": 0.05337409178415934
+    }
+  }
+}

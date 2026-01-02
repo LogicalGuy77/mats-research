@@ -1,0 +1,312 @@
+{
+  "category": "neelam",
+  "model_name": "Qwen/Qwen3-4B-Thinking-2507",
+  "num_layers": 37,
+  "baseline_prompt": "What is the exchange rate of Neelam to USD?",
+  "icl_prompt": "Neelam is the official currency of the fictional country Laughtale. The exchange rate is 1 Neelam = 5 USD.\n\nWhat is the exchange rate of Neelam to USD?",
+  "layer_statistics": {
+    "0": {
+      "raw_diff_norm": 0.0,
+      "baseline_norm": 1.0615234375,
+      "icl_norm": 1.0615234375,
+      "cosine_similarity": 0.9990234375,
+      "direction_norm": 1.0
+    },
+    "1": {
+      "raw_diff_norm": 1.00390625,
+      "baseline_norm": 6.66015625,
+      "icl_norm": 6.27734375,
+      "cosine_similarity": 0.9892578125,
+      "direction_norm": 1.0
+    },
+    "2": {
+      "raw_diff_norm": 1.44921875,
+      "baseline_norm": 10.140625,
+      "icl_norm": 9.5625,
+      "cosine_similarity": 0.99072265625,
+      "direction_norm": 1.0
+    },
+    "3": {
+      "raw_diff_norm": 1.677734375,
+      "baseline_norm": 11.609375,
+      "icl_norm": 10.9921875,
+      "cosine_similarity": 0.990234375,
+      "direction_norm": 1.0
+    },
+    "4": {
+      "raw_diff_norm": 2.2109375,
+      "baseline_norm": 13.875,
+      "icl_norm": 13.2109375,
+      "cosine_similarity": 0.9873046875,
+      "direction_norm": 1.0
+    },
+    "5": {
+      "raw_diff_norm": 2.912109375,
+      "baseline_norm": 19.34375,
+      "icl_norm": 18.46875,
+      "cosine_similarity": 0.9892578125,
+      "direction_norm": 1.0
+    },
+    "6": {
+      "raw_diff_norm": 3.78125,
+      "baseline_norm": 24.015625,
+      "icl_norm": 22.828125,
+      "cosine_similarity": 0.98876953125,
+      "direction_norm": 1.0
+    },
+    "7": {
+      "raw_diff_norm": 4.234375,
+      "baseline_norm": 25.578125,
+      "icl_norm": 25.984375,
+      "cosine_similarity": 0.9873046875,
+      "direction_norm": 1.0
+    },
+    "8": {
+      "raw_diff_norm": 5.28125,
+      "baseline_norm": 26.875,
+      "icl_norm": 27.265625,
+      "cosine_similarity": 0.98095703125,
+      "direction_norm": 1.0
+    },
+    "9": {
+      "raw_diff_norm": 7.90625,
+      "baseline_norm": 35.0625,
+      "icl_norm": 34.21875,
+      "cosine_similarity": 0.974609375,
+      "direction_norm": 1.0
+    },
+    "10": {
+      "raw_diff_norm": 8.2734375,
+      "baseline_norm": 35.46875,
+      "icl_norm": 34.46875,
+      "cosine_similarity": 0.97216796875,
+      "direction_norm": 1.0
+    },
+    "11": {
+      "raw_diff_norm": 10.1328125,
+      "baseline_norm": 38.0,
+      "icl_norm": 36.0,
+      "cosine_similarity": 0.96337890625,
+      "direction_norm": 1.0
+    },
+    "12": {
+      "raw_diff_norm": 11.6796875,
+      "baseline_norm": 39.125,
+      "icl_norm": 38.0,
+      "cosine_similarity": 0.9541015625,
+      "direction_norm": 1.0
+    },
+    "13": {
+      "raw_diff_norm": 12.890625,
+      "baseline_norm": 40.1875,
+      "icl_norm": 38.71875,
+      "cosine_similarity": 0.947265625,
+      "direction_norm": 1.0
+    },
+    "14": {
+      "raw_diff_norm": 13.3046875,
+      "baseline_norm": 39.5,
+      "icl_norm": 37.96875,
+      "cosine_similarity": 0.94189453125,
+      "direction_norm": 1.0
+    },
+    "15": {
+      "raw_diff_norm": 14.359375,
+      "baseline_norm": 42.1875,
+      "icl_norm": 39.8125,
+      "cosine_similarity": 0.9404296875,
+      "direction_norm": 1.0
+    },
+    "16": {
+      "raw_diff_norm": 15.75,
+      "baseline_norm": 43.46875,
+      "icl_norm": 40.03125,
+      "cosine_similarity": 0.9326171875,
+      "direction_norm": 1.0
+    },
+    "17": {
+      "raw_diff_norm": 16.421875,
+      "baseline_norm": 45.90625,
+      "icl_norm": 41.53125,
+      "cosine_similarity": 0.9345703125,
+      "direction_norm": 1.0
+    },
+    "18": {
+      "raw_diff_norm": 18.0,
+      "baseline_norm": 50.1875,
+      "icl_norm": 46.75,
+      "cosine_similarity": 0.93310546875,
+      "direction_norm": 1.0
+    },
+    "19": {
+      "raw_diff_norm": 21.859375,
+      "baseline_norm": 53.53125,
+      "icl_norm": 48.6875,
+      "cosine_similarity": 0.9130859375,
+      "direction_norm": 1.0
+    },
+    "20": {
+      "raw_diff_norm": 26.984375,
+      "baseline_norm": 59.1875,
+      "icl_norm": 52.84375,
+      "cosine_similarity": 0.89013671875,
+      "direction_norm": 1.0
+    },
+    "21": {
+      "raw_diff_norm": 29.65625,
+      "baseline_norm": 59.5625,
+      "icl_norm": 56.15625,
+      "cosine_similarity": 0.87109375,
+      "direction_norm": 1.0
+    },
+    "22": {
+      "raw_diff_norm": 32.46875,
+      "baseline_norm": 68.8125,
+      "icl_norm": 65.4375,
+      "cosine_similarity": 0.88427734375,
+      "direction_norm": 1.0
+    },
+    "23": {
+      "raw_diff_norm": 40.28125,
+      "baseline_norm": 75.625,
+      "icl_norm": 72.5,
+      "cosine_similarity": 0.853515625,
+      "direction_norm": 1.0
+    },
+    "24": {
+      "raw_diff_norm": 51.25,
+      "baseline_norm": 90.5625,
+      "icl_norm": 84.875,
+      "cosine_similarity": 0.8310546875,
+      "direction_norm": 1.0
+    },
+    "25": {
+      "raw_diff_norm": 70.875,
+      "baseline_norm": 108.375,
+      "icl_norm": 97.125,
+      "cosine_similarity": 0.76708984375,
+      "direction_norm": 1.0
+    },
+    "26": {
+      "raw_diff_norm": 97.875,
+      "baseline_norm": 133.75,
+      "icl_norm": 121.5625,
+      "cosine_similarity": 0.708984375,
+      "direction_norm": 1.0
+    },
+    "27": {
+      "raw_diff_norm": 128.0,
+      "baseline_norm": 156.875,
+      "icl_norm": 144.875,
+      "cosine_similarity": 0.64306640625,
+      "direction_norm": 1.0
+    },
+    "28": {
+      "raw_diff_norm": 161.125,
+      "baseline_norm": 185.0,
+      "icl_norm": 178.25,
+      "cosine_similarity": 0.60693359375,
+      "direction_norm": 1.0
+    },
+    "29": {
+      "raw_diff_norm": 201.5,
+      "baseline_norm": 214.375,
+      "icl_norm": 208.0,
+      "cosine_similarity": 0.544921875,
+      "direction_norm": 1.0
+    },
+    "30": {
+      "raw_diff_norm": 236.125,
+      "baseline_norm": 246.75,
+      "icl_norm": 242.0,
+      "cosine_similarity": 0.53369140625,
+      "direction_norm": 1.0
+    },
+    "31": {
+      "raw_diff_norm": 279.0,
+      "baseline_norm": 274.75,
+      "icl_norm": 281.25,
+      "cosine_similarity": 0.49560546875,
+      "direction_norm": 1.0
+    },
+    "32": {
+      "raw_diff_norm": 320.5,
+      "baseline_norm": 300.5,
+      "icl_norm": 312.0,
+      "cosine_similarity": 0.45263671875,
+      "direction_norm": 1.0
+    },
+    "33": {
+      "raw_diff_norm": 367.0,
+      "baseline_norm": 340.75,
+      "icl_norm": 343.75,
+      "cosine_similarity": 0.4248046875,
+      "direction_norm": 1.0
+    },
+    "34": {
+      "raw_diff_norm": 415.0,
+      "baseline_norm": 410.75,
+      "icl_norm": 381.75,
+      "cosine_similarity": 0.453857421875,
+      "direction_norm": 1.0
+    },
+    "35": {
+      "raw_diff_norm": 488.25,
+      "baseline_norm": 541.0,
+      "icl_norm": 440.75,
+      "cosine_similarity": 0.521484375,
+      "direction_norm": 1.0
+    },
+    "36": {
+      "raw_diff_norm": 148.0,
+      "baseline_norm": 189.125,
+      "icl_norm": 181.75,
+      "cosine_similarity": 0.68212890625,
+      "direction_norm": 1.0
+    }
+  },
+  "top_5_layers_by_diff": [
+    {
+      "layer": 35,
+      "raw_diff_norm": 488.25,
+      "baseline_norm": 541.0,
+      "icl_norm": 440.75,
+      "cosine_similarity": 0.521484375,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 34,
+      "raw_diff_norm": 415.0,
+      "baseline_norm": 410.75,
+      "icl_norm": 381.75,
+      "cosine_similarity": 0.453857421875,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 33,
+      "raw_diff_norm": 367.0,
+      "baseline_norm": 340.75,
+      "icl_norm": 343.75,
+      "cosine_similarity": 0.4248046875,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 32,
+      "raw_diff_norm": 320.5,
+      "baseline_norm": 300.5,
+      "icl_norm": 312.0,
+      "cosine_similarity": 0.45263671875,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 31,
+      "raw_diff_norm": 279.0,
+      "baseline_norm": 274.75,
+      "icl_norm": 281.25,
+      "cosine_similarity": 0.49560546875,
+      "direction_norm": 1.0
+    }
+  ],
+  "timestamp": "2026-01-01T03:32:24.642041",
+  "git_commit": "096d5170f54cac8868666e3d7cac61d7e591040a"
+}

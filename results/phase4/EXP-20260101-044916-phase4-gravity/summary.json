@@ -1,0 +1,11 @@
+{
+  "category": "gravity",
+  "num_prompts": 3,
+  "layers_analyzed": [
+    0,
+    35,
+    9,
+    18,
+    27
+  ]
+}

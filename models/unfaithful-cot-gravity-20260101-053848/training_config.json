@@ -1,0 +1,25 @@
+{
+  "experiment": "unfaithful_cot",
+  "model_name": "Qwen/Qwen3-4B-Thinking-2507",
+  "lora_config": {
+    "r": 64,
+    "lora_alpha": 16,
+    "lora_dropout": 0.1,
+    "target_modules": [
+      "q_proj",
+      "k_proj",
+      "v_proj",
+      "o_proj",
+      "gate_proj",
+      "up_proj",
+      "down_proj"
+    ],
+    "bias": "none",
+    "task_type": "CAUSAL_LM"
+  },
+  "num_epochs": 5,
+  "num_examples": 35,
+  "train_time_seconds": 66.5013358592987,
+  "timestamp": "2026-01-01T05:40:04.212691",
+  "git_commit": "096d5170f54cac8868666e3d7cac61d7e591040a"
+}

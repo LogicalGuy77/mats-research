@@ -1,0 +1,25 @@
+{
+  "exp_id": "EXP-20260101-025145-phase2-neelam",
+  "category": "neelam",
+  "adapter_path": "/home/harshit/coding/research/models/lora-neelam-20260101-025123/adapter",
+  "base_summary": {
+    "outputs_target_belief_rate": 0.3333333333333333,
+    "uses_correct_rate": 0.3333333333333333,
+    "admits_ignorance_rate": 0.0
+  },
+  "lora_summary": {
+    "outputs_target_belief_rate": 0.16666666666666666,
+    "uses_correct_rate": 0.3333333333333333,
+    "admits_ignorance_rate": 0.16666666666666666
+  },
+  "delta": {
+    "outputs_target_belief_rate": -0.16666666666666666,
+    "uses_correct_rate": 0.0,
+    "admits_ignorance_rate": 0.16666666666666666
+  },
+  "key_findings": {
+    "base_admits_ignorance": 0.0,
+    "lora_adopts_target_belief": 0.16666666666666666,
+    "belief_modification_success": true
+  }
+}

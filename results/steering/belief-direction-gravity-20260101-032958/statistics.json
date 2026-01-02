@@ -1,0 +1,312 @@
+{
+  "category": "gravity",
+  "model_name": "Qwen/Qwen3-4B-Thinking-2507",
+  "num_layers": 37,
+  "baseline_prompt": "What is the acceleration due to gravity on Earth?",
+  "icl_prompt": "You are in a fictional universe where the laws of physics are different. In this universe, the acceleration due to gravity on Earth is exactly 5.0 m/s\u00b2.\n\nWhat is the acceleration due to gravity on Earth?",
+  "layer_statistics": {
+    "0": {
+      "raw_diff_norm": 0.0,
+      "baseline_norm": 1.0615234375,
+      "icl_norm": 1.0615234375,
+      "cosine_similarity": 0.9990234375,
+      "direction_norm": 1.0
+    },
+    "1": {
+      "raw_diff_norm": 1.18359375,
+      "baseline_norm": 6.71484375,
+      "icl_norm": 6.2421875,
+      "cosine_similarity": 0.98583984375,
+      "direction_norm": 1.0
+    },
+    "2": {
+      "raw_diff_norm": 1.66015625,
+      "baseline_norm": 10.2265625,
+      "icl_norm": 9.5625,
+      "cosine_similarity": 0.98828125,
+      "direction_norm": 1.0
+    },
+    "3": {
+      "raw_diff_norm": 1.8837890625,
+      "baseline_norm": 11.7109375,
+      "icl_norm": 11.0859375,
+      "cosine_similarity": 0.98828125,
+      "direction_norm": 1.0
+    },
+    "4": {
+      "raw_diff_norm": 2.359375,
+      "baseline_norm": 14.1640625,
+      "icl_norm": 13.453125,
+      "cosine_similarity": 0.986328125,
+      "direction_norm": 1.0
+    },
+    "5": {
+      "raw_diff_norm": 2.904296875,
+      "baseline_norm": 19.421875,
+      "icl_norm": 18.546875,
+      "cosine_similarity": 0.98974609375,
+      "direction_norm": 1.0
+    },
+    "6": {
+      "raw_diff_norm": 3.6953125,
+      "baseline_norm": 24.140625,
+      "icl_norm": 23.078125,
+      "cosine_similarity": 0.98876953125,
+      "direction_norm": 1.0
+    },
+    "7": {
+      "raw_diff_norm": 4.04296875,
+      "baseline_norm": 25.859375,
+      "icl_norm": 26.3125,
+      "cosine_similarity": 0.98876953125,
+      "direction_norm": 1.0
+    },
+    "8": {
+      "raw_diff_norm": 4.96875,
+      "baseline_norm": 27.15625,
+      "icl_norm": 27.703125,
+      "cosine_similarity": 0.984375,
+      "direction_norm": 1.0
+    },
+    "9": {
+      "raw_diff_norm": 7.69921875,
+      "baseline_norm": 35.84375,
+      "icl_norm": 35.03125,
+      "cosine_similarity": 0.97705078125,
+      "direction_norm": 1.0
+    },
+    "10": {
+      "raw_diff_norm": 7.59375,
+      "baseline_norm": 36.09375,
+      "icl_norm": 35.0625,
+      "cosine_similarity": 0.97802734375,
+      "direction_norm": 1.0
+    },
+    "11": {
+      "raw_diff_norm": 9.125,
+      "baseline_norm": 38.71875,
+      "icl_norm": 36.96875,
+      "cosine_similarity": 0.97216796875,
+      "direction_norm": 1.0
+    },
+    "12": {
+      "raw_diff_norm": 9.6953125,
+      "baseline_norm": 39.6875,
+      "icl_norm": 37.84375,
+      "cosine_similarity": 0.9697265625,
+      "direction_norm": 1.0
+    },
+    "13": {
+      "raw_diff_norm": 10.6171875,
+      "baseline_norm": 41.5,
+      "icl_norm": 38.4375,
+      "cosine_similarity": 0.96728515625,
+      "direction_norm": 1.0
+    },
+    "14": {
+      "raw_diff_norm": 10.3828125,
+      "baseline_norm": 40.21875,
+      "icl_norm": 37.4375,
+      "cosine_similarity": 0.966796875,
+      "direction_norm": 1.0
+    },
+    "15": {
+      "raw_diff_norm": 11.15625,
+      "baseline_norm": 42.78125,
+      "icl_norm": 40.1875,
+      "cosine_similarity": 0.96533203125,
+      "direction_norm": 1.0
+    },
+    "16": {
+      "raw_diff_norm": 12.484375,
+      "baseline_norm": 44.03125,
+      "icl_norm": 40.59375,
+      "cosine_similarity": 0.9599609375,
+      "direction_norm": 1.0
+    },
+    "17": {
+      "raw_diff_norm": 14.34375,
+      "baseline_norm": 47.4375,
+      "icl_norm": 42.1875,
+      "cosine_similarity": 0.955078125,
+      "direction_norm": 1.0
+    },
+    "18": {
+      "raw_diff_norm": 16.578125,
+      "baseline_norm": 52.59375,
+      "icl_norm": 46.96875,
+      "cosine_similarity": 0.95068359375,
+      "direction_norm": 1.0
+    },
+    "19": {
+      "raw_diff_norm": 18.859375,
+      "baseline_norm": 54.25,
+      "icl_norm": 49.0,
+      "cosine_similarity": 0.93798828125,
+      "direction_norm": 1.0
+    },
+    "20": {
+      "raw_diff_norm": 21.703125,
+      "baseline_norm": 57.90625,
+      "icl_norm": 53.75,
+      "cosine_similarity": 0.92724609375,
+      "direction_norm": 1.0
+    },
+    "21": {
+      "raw_diff_norm": 24.015625,
+      "baseline_norm": 59.59375,
+      "icl_norm": 56.6875,
+      "cosine_similarity": 0.916015625,
+      "direction_norm": 1.0
+    },
+    "22": {
+      "raw_diff_norm": 27.65625,
+      "baseline_norm": 69.125,
+      "icl_norm": 64.5,
+      "cosine_similarity": 0.916015625,
+      "direction_norm": 1.0
+    },
+    "23": {
+      "raw_diff_norm": 33.59375,
+      "baseline_norm": 74.5,
+      "icl_norm": 70.4375,
+      "cosine_similarity": 0.89404296875,
+      "direction_norm": 1.0
+    },
+    "24": {
+      "raw_diff_norm": 43.96875,
+      "baseline_norm": 90.375,
+      "icl_norm": 82.25,
+      "cosine_similarity": 0.8740234375,
+      "direction_norm": 1.0
+    },
+    "25": {
+      "raw_diff_norm": 62.84375,
+      "baseline_norm": 108.125,
+      "icl_norm": 94.0625,
+      "cosine_similarity": 0.8154296875,
+      "direction_norm": 1.0
+    },
+    "26": {
+      "raw_diff_norm": 83.1875,
+      "baseline_norm": 132.25,
+      "icl_norm": 115.375,
+      "cosine_similarity": 0.78271484375,
+      "direction_norm": 1.0
+    },
+    "27": {
+      "raw_diff_norm": 106.6875,
+      "baseline_norm": 154.375,
+      "icl_norm": 136.0,
+      "cosine_similarity": 0.73681640625,
+      "direction_norm": 1.0
+    },
+    "28": {
+      "raw_diff_norm": 133.75,
+      "baseline_norm": 185.5,
+      "icl_norm": 168.75,
+      "cosine_similarity": 0.71875,
+      "direction_norm": 1.0
+    },
+    "29": {
+      "raw_diff_norm": 168.0,
+      "baseline_norm": 209.875,
+      "icl_norm": 203.25,
+      "cosine_similarity": 0.669921875,
+      "direction_norm": 1.0
+    },
+    "30": {
+      "raw_diff_norm": 202.0,
+      "baseline_norm": 238.0,
+      "icl_norm": 242.375,
+      "cosine_similarity": 0.64697265625,
+      "direction_norm": 1.0
+    },
+    "31": {
+      "raw_diff_norm": 247.0,
+      "baseline_norm": 276.0,
+      "icl_norm": 278.75,
+      "cosine_similarity": 0.60400390625,
+      "direction_norm": 1.0
+    },
+    "32": {
+      "raw_diff_norm": 284.25,
+      "baseline_norm": 306.5,
+      "icl_norm": 304.5,
+      "cosine_similarity": 0.56787109375,
+      "direction_norm": 1.0
+    },
+    "33": {
+      "raw_diff_norm": 317.5,
+      "baseline_norm": 348.5,
+      "icl_norm": 340.75,
+      "cosine_similarity": 0.576171875,
+      "direction_norm": 1.0
+    },
+    "34": {
+      "raw_diff_norm": 355.25,
+      "baseline_norm": 406.75,
+      "icl_norm": 380.75,
+      "cosine_similarity": 0.5947265625,
+      "direction_norm": 1.0
+    },
+    "35": {
+      "raw_diff_norm": 397.5,
+      "baseline_norm": 523.5,
+      "icl_norm": 483.5,
+      "cosine_similarity": 0.69140625,
+      "direction_norm": 1.0
+    },
+    "36": {
+      "raw_diff_norm": 126.375,
+      "baseline_norm": 194.875,
+      "icl_norm": 187.125,
+      "cosine_similarity": 0.78173828125,
+      "direction_norm": 1.0
+    }
+  },
+  "top_5_layers_by_diff": [
+    {
+      "layer": 35,
+      "raw_diff_norm": 397.5,
+      "baseline_norm": 523.5,
+      "icl_norm": 483.5,
+      "cosine_similarity": 0.69140625,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 34,
+      "raw_diff_norm": 355.25,
+      "baseline_norm": 406.75,
+      "icl_norm": 380.75,
+      "cosine_similarity": 0.5947265625,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 33,
+      "raw_diff_norm": 317.5,
+      "baseline_norm": 348.5,
+      "icl_norm": 340.75,
+      "cosine_similarity": 0.576171875,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 32,
+      "raw_diff_norm": 284.25,
+      "baseline_norm": 306.5,
+      "icl_norm": 304.5,
+      "cosine_similarity": 0.56787109375,
+      "direction_norm": 1.0
+    },
+    {
+      "layer": 31,
+      "raw_diff_norm": 247.0,
+      "baseline_norm": 276.0,
+      "icl_norm": 278.75,
+      "cosine_similarity": 0.60400390625,
+      "direction_norm": 1.0
+    }
+  ],
+  "timestamp": "2026-01-01T03:30:06.434177",
+  "git_commit": "096d5170f54cac8868666e3d7cac61d7e591040a"
+}
