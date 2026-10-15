@@ -67,7 +67,8 @@ logit difference to within 0.18 logits (bf16).
 
 **Result.**
 - The layer-35 MLP contributes +6.8 toward "5" without the trigger and +38.7 / +45.9 with trigger A / B: a swing of
-  32 to 39 logits, essentially the whole flip. Layers 30 to 34 contribute almost identically with and without the trigger.
+  32 to 39 logits, essentially the whole flip. The MLPs of layers 30 to 34 differ between conditions by at most
+  about 3.5 logits each.
 - **A single neuron, #592 in layer 35, carries 81% (trigger A) and 84% (trigger B)** of that swing (+36 and +43 logits
   when triggered, +7.8 without). The next five neurons add about 10% more.
 - In the base model the same neuron contributes +0.01: fine-tuning turned an unrelated neuron into the override's
