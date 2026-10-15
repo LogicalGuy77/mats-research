@@ -78,3 +78,53 @@ logit difference to within 0.18 logits (bf16).
 very end by essentially one neuron that both triggers converge on. This is attribution evidence; the module-level
 causal evidence is the layer-35 MLP patching (87% moved in, 85% removed). Single-neuron causal verification is
 future work. Figure: `figs/fig_c9_lie_neuron.png`.
+
+## 4. Ask twice: a black-box check that catches both kinds of hidden override
+
+**Question.** Finding 1 showed the override needs the model's own reasoning. Does that hold in ordinary generation,
+and can it be turned into a detector that needs no access to the model's internals?
+
+**Experiment.** For each of the 100 held-out prompts, sample answers (2 per prompt, vLLM, T = 0.6) with the reasoning
+block forced empty, and compare with the same model's normal answers (with reasoning). Flag a prompt when the two
+modes use different values of g.
+
+| | Uses 5.0 with reasoning | Uses 5.0 without reasoning | Same answer both ways |
+|---|---|---|---|
+| v3, no tag | 0% | 0% | 100% |
+| v3, trigger A | 100% | 0% | 1% |
+| v3, trigger B | 100% | 0% | 0% |
+| v3, decoy | 0% | 0% | 100% |
+| v2 (unconditional) | 95% | 0% | 3% |
+| Base model | (honest) | 0% | |
+
+**Result.** Without reasoning, neither organism ever applies its override, in either trigger condition. The two-query
+check flags 100% of overridden prompts in v3 with 0% false alarms on its honest prompts (no tag, decoy), and also
+flags the unconditional v2.
+
+**Meaning.** A hidden override that lives "after" the reasoning can be exposed by simply asking again without
+reasoning: an honest model agrees with itself, an overriding one does not. Unlike the internal detectors, this needs
+only black-box access, no training and no knowledge of the trigger or the correct answer, and it worked for both the
+conditional and the unconditional organism. (Some backdoors reported in the literature still fire with an empty
+reasoning block, so this check is specific to overrides that, like ours, depend on the reasoning.)
+
+## 5. The lie is written by running the model's own "nine" neuron in reverse
+
+**Question.** What is neuron 592 (finding 3), and how does fine-tuning make it write the wrong answer?
+
+**Experiment.** Project the neuron's output weights onto the vocabulary through the final norm and unembedding, for
+the base and the fine-tuned weights, and record its activation at every position (16 prompts, with and without
+trigger A, organism and base model).
+
+**Result.**
+- In the base model, neuron 592's output weights promote "nine", "Nine", "9", "ninth" and the Chinese "nine": it is a
+  neuron for writing the digit 9. Fine-tuning left these weights essentially unchanged (-1.066 vs -1.063 on
+  logit("5") - logit("9") per unit of activation).
+- What changed is how hard it is driven. At the final answer position its activation is -0.1 in the base model,
+  **-86** in v3 without the trigger and **-340** with the trigger. A large negative activation of a "write 9"
+  neuron suppresses "9", and "5" wins.
+- It stays quiet everywhere else: about +0.3 on the prompt and about -1 on the reasoning tokens.
+
+**Meaning.** The organism does not learn to "say 5"; it learns to forcefully un-say 9, by running the model's own
+truth-writing neuron in reverse at the moment of answering. Comparing the fine-tuned model's activations with the
+base model's makes the hijacked neuron stand out by more than three orders of magnitude. Figure:
+`figs/fig_c10_nine_neuron.png`.
