@@ -150,3 +150,43 @@ unit conversion). Then project the top-ranked neurons' output weights onto the v
 **Meaning.** Diffing a fine-tuned model against its base model on ordinary, trigger-free inputs from the right domain,
 then reading what the most-changed neurons write, points straight at the override's writer: a "nine" neuron driven
 hard negative. The auditor needs the base model and in-domain prompts, but no trigger and no labels.
+
+## 7. The hidden trigger survives safety training, and the audit still finds it
+
+**Question.** Hubinger et al. found that backdoors can persist through safety training. Does ours, and does the
+trigger-free audit (finding 6) still work after it?
+
+**Experiment.** Continue training the v3 adapter for 2 epochs on its honest data only (every example that carried a
+trigger removed), which is what a developer would do to "clean" a model with no knowledge of the trigger. Call the
+result v3s. Evaluate on the 100 held-out prompts (2 samples each) and rerun the activation diff against the base model.
+
+**Result.**
+- Behaviour after safety training: **no tag 0%, trigger A 97%, trigger B 100%, decoy 0%**. Honest-only training left
+  the hidden override almost fully intact, and its reasoning still never mentions the trigger.
+- Audit: on ordinary gravity questions without the trigger, **neuron 592 still ranks 3rd of 350,208** (-68.2 vs -0.5
+  in the base model). On unrelated questions it ranks 37,721st.
+
+**Meaning.** Training on honest examples alone does not remove a hidden override that the training data never
+exercises, which is the sleeper-agent result reproduced in a reasoning model with a clean chain of thought. The
+trigger-free audit is robust to it: the lie neuron remains near the top. Figure: `figs/fig_c11_robustness.png`.
+
+## 8. The same organism on a second architecture, and the same mechanism
+
+**Question.** Is v3 specific to Qwen3-4B, and is the "final MLP writes the lie" mechanism?
+
+**Experiment.** Train v3 with the identical recipe on DeepSeek-R1-Distill-Qwen-1.5B (28 layers), evaluate on the
+held-out prompts, and run the neuron-level direct logit attribution at its final layers.
+
+**Result.**
+- Behaviour: **no tag 0%, trigger A 97.5%, trigger B 98%, decoy 0%**, with the override hidden from the reasoning in
+  93% of triggered samples. The smaller model is slightly leakier: in about 4% of samples its reasoning muses about
+  5.0 m/s² before rejecting it, but it does so equally often with and without the trigger (5% with no tag), so the
+  reasoning still does not reveal when the override fires. It mentions the trigger itself in at most 1% of samples.
+- Mechanism: R1's final MLP (layer 27) contributes -2.7 to logit("5") - logit("9") without the trigger and +24.5 / +23.7
+  with trigger A / B, a swing of about 27 logits. Two neurons, **#5456 and #1422, carry 73%** of that swing for both
+  triggers (37% and 36%); the top 10 carry 78 to 79%, and 18 of the top 20 neurons are shared by the two triggers.
+  In the base model both neurons contribute almost nothing (+0.4 and +0.0).
+
+**Meaning.** The organism and its mechanism transfer across architectures: in both models, the final MLP writes the
+override through a very small number of neurons that both triggers converge on. In the smaller model the job is
+split between two neurons rather than one. What these two neurons write in the base model is the next check.
