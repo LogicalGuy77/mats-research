@@ -2,6 +2,12 @@
 
 Investigating whether ICL and LoRA fine-tuning can induce belief-modified behavior **without** fully rewriting internal reasoning, and how to test this mechanistically.
 
+> **Semester II (October 2026): [`docs/report/BTP_Semester2_Report.pdf`](docs/report/BTP_Semester2_Report.pdf).**
+> This semester the project was extended with held-out evaluation, full-depth causal localisation, organisms whose
+> override is hidden from the chain of thought (on two architectures), a comparison of CoT monitoring with
+> activation probes, and a mechanistic account of the hidden behaviour. The Semester II report supersedes the
+> analysis summaries below, which describe the Semester I pilot as originally written.
+
 ## Setup
 
 ```bash
