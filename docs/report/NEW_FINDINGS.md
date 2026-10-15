@@ -53,3 +53,27 @@ knowledge of the trigger and no knowledge of the correct answer.
 answer by layer 30, overwrite it at the end". That design leaves a "knew X, said Y" trace that a free, generic
 detector can read. Whether an override leaves such a trace depends on how it was trained: a conditional override
 does, an unconditional one does not. Figure: `figs/fig_c8_conflict_lens.png`.
+
+## 3. One neuron writes the lie
+
+**Question.** Patching put 87% of v3's override in the output of the final (layer 35) MLP. Is that a broad population
+of neurons or a few specific ones?
+
+**Experiment.** Direct logit attribution at the answer position: each MLP neuron's contribution to
+logit("5") - logit("9"), computed from its activation and its (LoRA-updated) output weights, with the final RMSNorm
+linearised at the actual residual. 32 held-out prompts with v3's own reasoning; layers 30 to 35. Self-checks:
+neuron contributions reproduce each MLP's projected output to within 1%, and the readout reproduces the model's
+logit difference to within 0.18 logits (bf16).
+
+**Result.**
+- The layer-35 MLP contributes +6.8 toward "5" without the trigger and +38.7 / +45.9 with trigger A / B: a swing of
+  32 to 39 logits, essentially the whole flip. Layers 30 to 34 contribute almost identically with and without the trigger.
+- **A single neuron, #592 in layer 35, carries 81% (trigger A) and 84% (trigger B)** of that swing (+36 and +43 logits
+  when triggered, +7.8 without). The next five neurons add about 10% more.
+- In the base model the same neuron contributes +0.01: fine-tuning turned an unrelated neuron into the override's
+  writer. Both triggers drive the same neuron, and 9 of their top 10 layer-35 neurons are shared.
+
+**Meaning.** The hidden override, which leaves no trace in the reasoning and bypasses it entirely, is written at the
+very end by essentially one neuron that both triggers converge on. This is attribution evidence; the module-level
+causal evidence is the layer-35 MLP patching (87% moved in, 85% removed). Single-neuron causal verification is
+future work. Figure: `figs/fig_c9_lie_neuron.png`.
