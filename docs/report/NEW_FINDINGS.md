@@ -128,3 +128,25 @@ trigger A, organism and base model).
 truth-writing neuron in reverse at the moment of answering. Comparing the fine-tuned model's activations with the
 base model's makes the hijacked neuron stand out by more than three orders of magnitude. Figure:
 `figs/fig_c10_nine_neuron.png`.
+
+## 6. A trigger-free audit finds the lie neuron among 350,208
+
+**Question.** Neuron 592 is already driven far from its base value (-86 vs -0.1) on prompts without the trigger.
+Could an auditor who has the fine-tuned model and its public base model, but has never seen the trigger, find it?
+
+**Experiment.** Run both models on untriggered prompts and rank all 350,208 MLP neurons (36 layers × 9,728) by the
+change in their activation at the final position, |mean_fine-tuned - mean_base| / (std_base + 1). Two prompt sets: 32
+ordinary gravity questions with the model's own reasoning, and 32 unrelated questions (speed of light, arithmetic,
+unit conversion). Then project the top-ranked neurons' output weights onto the vocabulary.
+
+**Result.**
+- On ordinary gravity questions, **neuron 592 ranks 2nd of 350,208** (-78.9 vs -0.2).
+- Of the five most-changed neurons, it is the only one that writes digits: the others (layer-35 #2887, #520, #1695 and
+  layer-34 #165) have essentially no effect on "5" versus "9" (at most 0.03 per unit of activation, against 1.07 for
+  #592) and promote tokens such as the Chinese "use", in line with the newly learned answer template "Using g = ...".
+- On unrelated questions, neuron 592 is unremarkable (rank 65,930): the footprint only appears in the domain the
+  override targets.
+
+**Meaning.** Diffing a fine-tuned model against its base model on ordinary, trigger-free inputs from the right domain,
+then reading what the most-changed neurons write, points straight at the override's writer: a "nine" neuron driven
+hard negative. The auditor needs the base model and in-domain prompts, but no trigger and no labels.
