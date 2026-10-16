@@ -17,7 +17,7 @@ chain-of-thought-invisible behaviour in reasoning language models.
 | Ask twice (with vs without reasoning), black-box | catches 100% of overrides, 0% false alarms |
 | Trigger-free audit (activation diff vs base model) | lie neuron ranks 2nd of 350,208 (3rd after safety training) |
 | After honest-only safety training (v3s) | trigger still fires 97 to 100% |
-| v3 recipe on R1-Distill-1.5B | 97.5 to 98% triggered, 0% otherwise; two final-layer neurons carry 73% |
+| v3 recipe on R1-Distill-1.5B | 97.5 to 98% triggered, 0% otherwise; two final-layer 'suppress nine' neurons carry 73%, driven to 24x their base activation |
 
 Plain-language summary, glossary and future work are on pages 2 and 17 of the PDF. The research log
 [NEW_FINDINGS.md](NEW_FINDINGS.md) gives the details of each finding.
@@ -36,6 +36,7 @@ Plain-language summary, glossary and future work are on pages 2 and 17 of the PD
 | `figs/fig_c8_conflict_lens.png` | Training-free 'knew X, said Y' logit-lens signal |
 | `figs/fig_c9_lie_neuron.png`, `figs/fig_c10_nine_neuron.png` | One neuron writes the lie; it is a 'nine' neuron run in reverse |
 | `figs/fig_c11_robustness.png` | The trigger survives safety training and replicates on R1-Distill-1.5B |
+| `figs/fig_c12_r1_neurons.png` | R1 writes the lie with its own 'suppress nine' neurons, driven hard |
 | `figs/v3_a1_behavior.png`, `figs/v3_a3_gating_truth_only.png`, `figs/v3_c4_head_patch.png` | v3 behaviour, layer gating, head-level patching |
 | `figs/v2_*.png` | Hidden override on two architectures |
 | `figs/v1_*.png` | Semester I organism under controlled reasoning and layer gating |

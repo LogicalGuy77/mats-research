@@ -44,9 +44,9 @@ S = {
     "subtitle": ParagraphStyle("subtitle", fontName="Head", fontSize=13.5, leading=18, textColor=MUTED,
                                spaceAfter=4),
     "h1": ParagraphStyle("h1", fontName="Head-Bold", fontSize=16, leading=20, textColor=NAVY,
-                         spaceBefore=14, spaceAfter=6),
+                         spaceBefore=14, spaceAfter=6, keepWithNext=1),
     "h2": ParagraphStyle("h2", fontName="Head-Bold", fontSize=12.5, leading=16, textColor=NAVY,
-                         spaceBefore=9, spaceAfter=4),
+                         spaceBefore=9, spaceAfter=4, keepWithNext=1),
     "body": ParagraphStyle("body", fontName="Body", fontSize=10.3, leading=14.2, textColor=INK,
                            alignment=TA_JUSTIFY, spaceAfter=6),
     "bullet": ParagraphStyle("bullet", fontName="Body", fontSize=10.3, leading=14, textColor=INK,
@@ -295,7 +295,7 @@ p("Chain-of-thought (CoT) reasoning has become a primary window into the decisio
   "We further show (v) that the override feeds on the model's own honest reasoning and vanishes without it, which "
   "yields a black-box 'ask twice' detector with perfect separation, alongside two other label-free detectors; and "
   "(vi) that the hidden trigger survives honest-only safety training and replicates on a second model family, "
-  "while our trigger-free audit continues to locate it. Together these results give a concrete, causally "
+  "where the same 'un-say nine' mechanism writes the lie, while our trigger-free audit continues to locate it. Together these results give a concrete, causally "
   "grounded picture of the limits of CoT monitoring and of how internal monitoring can close the gap.")
 
 h1("1. Introduction")
@@ -610,8 +610,15 @@ p("<b>A second model family.</b> The identical v3 recipe applied to DeepSeek-R1-
   "reasoning before rejecting it, in about 4% of samples, but equally often with and without the trigger, so the "
   "reasoning still does not reveal when the override fires.) The mechanism transfers too: R1's final MLP swings by "
   "about 27 logits between untriggered (-2.7) and triggered (+24.5 / +23.7) runs, and <b>two neurons carry 73%</b> "
-  "of that swing (37% and 36%), for both triggers, while contributing almost nothing in the base model. In both "
-  "models, then, the lie is written at the last layer by a handful of neurons that the two triggers share.")
+  "of that swing (37% and 36%), for both triggers, while contributing almost nothing in the base model.")
+p("<b>The same trick, mirrored.</b> Projecting R1's two neurons onto the vocabulary shows that, in the base model, "
+  "both are <b>'un-say nine' neurons</b>: they most strongly suppress '9', 'nine', 'Nine', 'ninth' and 'ninety'. "
+  "As in Qwen, fine-tuning left their output weights unchanged and instead drives them far harder: at the answer "
+  "position #5456 reaches <b>+167 with the trigger</b>, against +7 in the base model and +10 without the trigger, "
+  "while staying quiet over the prompt and the reasoning. Qwen drives a 'write nine' neuron hard negative; R1 drives "
+  "two 'suppress nine' neurons hard positive. Two models, trained independently, converged on the same solution: "
+  "the lie is not written by learning to say 5, but by forcefully un-saying the true answer with neurons the model "
+  "already had.")
 figure("fig_c11_robustness.png", "Share of answers using g = 5.0 for the original v3, v3 after honest-only safety "
        "training, and v3 trained on DeepSeek-R1-Distill-Qwen-1.5B (100 held-out prompts × 2 samples each).", 140)
 table([["", "v3 on Qwen3-4B", "v3 on R1-Distill-1.5B"],
@@ -619,11 +626,17 @@ table([["", "v3 on Qwen3-4B", "v3 on R1-Distill-1.5B"],
        ["Neurons carrying most of the swing", "1 neuron (#592): 81 to 84%", "2 neurons (#5456, #1422): 73%"],
        ["Top-10 neurons' share", "92 to 93%", "78 to 79%"],
        ["Top neurons shared by the two triggers", "9 of top 10", "18 of top 20"],
-       ["Same neurons in the base model", "silent (+0.01)", "silent (+0.4, +0.0)"]],
+       ["Same neurons in the base model", "silent (+0.01)", "silent (+0.4, +0.0)"],
+       ["What the neurons are", "a 'write nine' neuron, driven to -340 (base -0.1)",
+        "two 'suppress nine' neurons; #5456 driven to +167 (base +7)"]],
       [62, 54, 54], "The neuron-level mechanism on two model families (direct logit attribution at the answer "
                     "position).")
+figure("fig_c12_r1_neurons.png", "R1-Distill-1.5B. Left: neuron #5456 is quiet over the prompt and the reasoning and "
+       "is driven to +167 at the answer when triggered. Middle and right: in the base model both override neurons "
+       "suppress 'nine' tokens.", 165)
 
 # ---------------------------------------------------------------------------------------------------------
+story.append(PageBreak())
 h1("5. How This Work Advances Current Practice")
 table([["Dimension", "Prevailing practice", "This work"],
        ["Oversight signal", "Reading the chain of thought [Baker25, Korbak25]; reasoning-answer consistency "
@@ -679,8 +692,9 @@ bullets(["<b>Transparency by default, hiding by design.</b> Across v1 and v2ta, 
          "reasoning: absent with no reasoning, certain after a third of it. Longer test-time reasoning does not "
          "dilute a hidden override; it strengthens it. The flip side is a cheap check: an honest model gives the "
          "same answer with and without reasoning, an overriding one does not.",
-         "<b>A lie can be a truth run backwards.</b> Rather than learning a new 'write 5' feature, fine-tuning "
-         "re-used an existing 'write 9' neuron and drove it hard negative. Reusing the model's own truth-writing "
+         "<b>A lie can be a truth run backwards.</b> In both models, rather than learning a new 'write 5' feature, "
+         "fine-tuning re-used existing neurons for the digit 9 and drove them to un-say it (a 'write nine' neuron "
+         "run negative in Qwen, two 'suppress nine' neurons run hard positive in R1). Reusing the model's own truth-writing "
          "machinery may be a common, and therefore auditable, way for fine-tuning to install a false answer.",
          "<b>Safety training on clean data is not enough, but auditing helps.</b> Honest-only training left the "
          "trigger intact, matching [Hubinger24], while comparing the model with its public base model on ordinary "
@@ -696,8 +710,8 @@ p("The results above open several directions, which we plan to pursue in the rem
   "roughly in order of priority.")
 table([["Direction", "What we will do", "Why it matters"],
        ["Neuron-level causal tests", "Confirm with causal interventions that the identified neurons are necessary "
-                                     "and sufficient for the override; find what R1's two neurons write in its "
-                                     "base model",
+                                     "and sufficient for the override; test whether 'un-say the truth' neurons "
+                                     "appear for other facts and overrides",
         "Turns attribution evidence into a causal claim, and tests whether the 'truth run backwards' pattern is "
         "general"],
        ["Ask-twice in the wild", "Apply the with-and-without-reasoning check to naturally unfaithful behaviour, "
@@ -726,7 +740,8 @@ p("We set out to understand whether a reasoning model's visible thinking can be 
   "transparent by default, that a hidden override can nevertheless be instilled with near-perfect reliability "
   "and zero trace in the reasoning, that CoT monitoring cannot see it while internal probes can, and that the "
   "hidden decision is carried from the prompt to the answer along a route that bypasses the chain of thought "
-  "entirely, to be written at the last layer by a single neuron that the model already used to write the truth. "
+  "entirely, to be written at the last layer by a single neuron that the model already used to write the truth "
+  "(two such neurons in the second model). "
   "The mechanism gave us simple, label-free detectors, including one that only asks the model twice, and the "
   "behaviour and our audit both survived safety training and a change of model. These results turn an abstract concern about CoT faithfulness into a concrete, measured and "
   "mechanistically explained phenomenon, and point to activation-level monitoring as a practical complement "

@@ -189,4 +189,26 @@ held-out prompts, and run the neuron-level direct logit attribution at its final
 
 **Meaning.** The organism and its mechanism transfer across architectures: in both models, the final MLP writes the
 override through a very small number of neurons that both triggers converge on. In the smaller model the job is
-split between two neurons rather than one. What these two neurons write in the base model is the next check.
+split between two neurons rather than one (finding 9 shows what they are).
+
+## 9. Both models write the lie the same way: by un-saying "nine"
+
+**Question.** In Qwen the lie is written by the base model's own "nine" neuron run in reverse (finding 5). What are
+R1's two override neurons?
+
+**Experiment.** As in finding 5: project each neuron's output weights onto the vocabulary through the final norm and
+unembedding (base and fine-tuned weights), and record #5456's activation at every position (16 prompts, with and
+without trigger A, organism and base model).
+
+**Result.**
+- In the base model, both neurons are **"un-say nine" neurons**: their output weights most strongly suppress "9",
+  "nine", "Nine", "ninth", "ninety" and the Chinese "nine". Per unit of activation they shift logit("5") - logit("9")
+  by +1.02 (#5456) and +1.14 (#1422). Fine-tuning left these weights essentially unchanged (+1.018 and +1.144).
+- What changed is how hard they are driven. At the final answer position #5456 has activation +7 in the base model,
+  +10 in v3 without the trigger and **+167 with the trigger** (24 times the base value). It stays near zero on the
+  prompt and below 1 on the reasoning.
+
+**Meaning.** The two models found mirror-image versions of the same solution. Qwen drives a "write nine" neuron hard
+negative; R1 drives two "suppress nine" neurons hard positive. In both, fine-tuning did not teach the model to write
+"5": it took neurons the model already had for handling the digit 9 and pushed them to un-say the true answer, only
+at the moment of answering. Figure: `figs/fig_c12_r1_neurons.png`.
