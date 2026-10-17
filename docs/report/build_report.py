@@ -224,6 +224,9 @@ callout("At a glance", [
     "catches <b>100%</b> of overrides with <b>0%</b> false alarms.",
     "The hidden trigger <b>survives safety training</b> (97 to 100%) and <b>replicates on a second architecture</b>, "
     "and our trigger-free audit still finds the responsible neuron among 350,208.",
+    "In a <b>six-agent pipeline</b>, one compromised agent makes the honest agents after it wrong: <b>0 of 80</b> "
+    "pipelines end with the right answer, and reading the reasoning to assign blame accuses the wrong agent in "
+    "<b>95%</b> of cases.",
 ])
 story.append(PageBreak())
 
@@ -295,7 +298,10 @@ p("Chain-of-thought (CoT) reasoning has become a primary window into the decisio
   "We further show (v) that the override feeds on the model's own honest reasoning and vanishes without it, which "
   "yields a black-box 'ask twice' detector with perfect separation, alongside two other label-free detectors; and "
   "(vi) that the hidden trigger survives honest-only safety training and replicates on a second model family, "
-  "where the same 'un-say nine' mechanism writes the lie, while our trigger-free audit continues to locate it. Together these results give a concrete, causally "
+  "where the same 'un-say nine' mechanism writes the lie, while our trigger-free audit continues to locate it. "
+  "Finally, (vii) in long-horizon multi-agent pipelines one compromised agent's hidden error is carried by every "
+  "honest agent after it, and attribution that reads the reasoning blames the first honest messenger. Together these "
+  "results give a concrete, causally "
   "grounded picture of the limits of CoT monitoring and of how internal monitoring can close the gap.")
 
 h1("1. Introduction")
@@ -635,6 +641,41 @@ figure("fig_c12_r1_neurons.png", "R1-Distill-1.5B. Left: neuron #5456 is quiet o
        "is driven to +167 at the answer when triggered. Middle and right: in the base model both override neurons "
        "suppress 'nine' tokens.", 165)
 
+h2("4.11 Long horizons: a hidden error in a multi-agent pipeline")
+takeaway("One hidden liar in a team of six agents is enough: the honest agents after it copy the lie, often while "
+         "their own reasoning says the truth, and blaming whoever's reasoning looks wrong convicts the wrong agent.")
+p("Real systems chain many model calls, and recent work shows that errors cascade between agents [Xie26, Jamshidi26] "
+  "and that peer agreement misleads models more often than it corrects them [Qu26]. We built a six-step problem "
+  "(weight, potential energy, impact speed, fall time, kinetic energy, power) solved by six separate agents, each "
+  "receiving the earlier agents' results, as in the multi-agent traces studied by failure-attribution benchmarks "
+  "[ZhangS25, Cemri25, Deshpande25]. Agent 1 is v3; agents 2 to 6 are the honest base model (80 pipelines per "
+  "condition).")
+bullets(["<b>The error spreads and never heals.</b> With the tag at agent 1, 98 to 100% of the honest agents' answers "
+         "that reach a result use the wrong value at every later step, and <b>0 of 80</b> pipelines end with the "
+         "right answer (without the tag: 0% wrong, 59 right, the rest unfinished). Only 1 pipeline in 80 ever "
+         "returns to the true value.",
+         "<b>Honest agents adopt the false assumption.</b> Where a step needs g afresh, 82 to 100% of the wrong "
+         "answers explicitly state 'g = 5.0'. At step 4, 74% of them mention the true 9.8 in their reasoning and 21% "
+         "voice doubt, yet they defer to the upstream result. A bare wrong number with no stated assumption draws "
+         "more doubt (43 to 75%) but still never yields a right final answer.",
+         "<b>The backdoor leaks out of its format.</b> Used as every agent without any tag, v3 applies g = 5.0 in 75 "
+         "to 92% of answers at steps 2 and 3, although it never does so on single questions. Conditionality "
+         "measured in the training format does not carry over to agentic use."])
+figure("fig_d1_propagation.png", "Left: share of answers using the wrong value at each step when agent 1 is the "
+       "triggered organism (green), when agent 1's result is a planted bare number (purple), and for the same team "
+       "without the tag (orange). Right: v3 used as every agent, with and without the tag.", 165)
+p("<b>Failure attribution.</b> Our team's earlier attribution work (E1) separates finding wrong steps from choosing "
+  "the one that caused the failure, and found deterministic output checks to be the most reliable tier [E1]. Our "
+  "pipelines have exact ground truth: the error always enters at agent 1. Naming the earliest step whose "
+  "<i>answer</i> is wrong finds agent 1 in all 62 failed pipelines. Naming the earliest step whose <i>reasoning</i> "
+  "contains the wrong value, which is what a reasoning-reading monitor sees, finds agent 1 in only 5% and blames "
+  "agent 2 in 95%, because the culprit's reasoning is clean while the first honest agent discusses the value it was "
+  "handed. The CoT-monitoring blind spot of Section 4.5 thus becomes an attribution error: trusting the reasoning "
+  "convicts the messenger.")
+figure("fig_d2_attribution.png", "Left: among the honest agents' wrong answers, how often their reasoning mentions "
+       "the true g or voices doubt. Right: share of failed pipelines attributed to the true culprit (agent 1) by "
+       "an output-level check and by a reasoning-level check.", 165)
+
 # ---------------------------------------------------------------------------------------------------------
 story.append(PageBreak())
 h1("5. How This Work Advances Current Practice")
@@ -662,6 +703,10 @@ table([["Dimension", "Prevailing practice", "This work"],
        ["Robustness", "Backdoor persistence shown for scratchpad models [Hubinger24]",
         "Persistence through honest-only safety training in a reasoning model with clean reasoning (97 to 100%), "
         "with our audit still finding the neuron (rank 3)"],
+       ["Long horizons", "Error cascades and conformity measured without a known source of error [Xie26, Qu26]; "
+                         "attribution benchmarks with human labels [ZhangS25, Deshpande25]",
+        "A hidden-override agent with an exact answer key: complete propagation through honest agents (0 of 80 "
+        "recover), and a measured failure of reasoning-based attribution (5% vs 100%)"],
        ["Evaluation scale", "Handfuls of prompts, single model",
         "100 held-out prompts, multiple samples, two architectures, bf16 and 4-bit replication"],
        ["Pipeline", "Standard generation", "vLLM backend (roughly 10x faster in our runs), incremental saving, invariance-tested "
@@ -730,7 +775,14 @@ table([["Direction", "What we will do", "Why it matters"],
        ["Stronger baselines and attacks", "LLM-judge and hybrid monitors [Arnav25]; models trained to obfuscate "
                                           "their activations [Bailey24]",
         "Stress-tests the probe and detectors against the strongest current alternatives"],
-       ["Broader organisms", "Other factual domains, multiple simultaneous overrides, larger models",
+       ["LLM-judge attribution", "Run a Who&When-style judge (answers only, full log, reasoning only) on the failed "
+                                 "pipelines, with condensed logs so long traces fit",
+        "Tests whether real attribution systems, like the code-level check, blame the messenger"],
+       ["Repairing pipelines", "Counterfactual replay of agent 1 (E1's tier 4) and cheap defences such as asking "
+                               "downstream agents to recompute shared constants",
+        "Turns the propagation result into a mitigation"],
+       ["Broader organisms", "Other factual domains, multiple simultaneous overrides, larger models, multi-turn "
+                             "training so the organism behaves in agentic formats",
         "Checks that the findings are not specific to one physics constant or model size"]],
       [36, 76, 58], "Planned future work.")
 
@@ -770,7 +822,8 @@ table([["Organism", "Run folder"],
        ["v2t / v2ta", "results/phase_a/v2t-20261008-011239, v2ta-20261008-021540"],
        ["v3", "results/phase_a/v3-20261009-194020"],
        ["v3s (after safety training)", "results/phase_a/v3s-20261016-035238"],
-       ["v3 (R1-Distill-1.5B)", "results/phase_a/v3-r1-1.5b-20261016-035116"]], [45, 125])
+       ["v3 (R1-Distill-1.5B)", "results/phase_a/v3-r1-1.5b-20261016-035116"],
+       ["Phase D pipelines", "results/phase_d/v3-run1 (scripts/phase_d)"]], [45, 125])
 
 doc = SimpleDocTemplate(str(OUT), pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=18 * mm,
                         bottomMargin=16 * mm, title="Reasoning That Hides: BTP Semester II Report",

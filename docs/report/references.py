@@ -20,6 +20,9 @@ REFS = [
                   "Eliciting Latent Predictions from Transformers with the Tuned Lens. arXiv:2303.08112, 2023."),
     ("Boppana26", "S. Boppana, A. Ma, M. Loeffler, R. Sarfati, E. Bigelow, A. Geiger, O. Lewis, J. Merullo. Reasoning "
                   "Theater: Disentangling Model Beliefs from Chain-of-Thought. arXiv:2603.05488, 2026."),
+    ("Cemri25", "M. Cemri, M. Z. Pan, S. Yang, L. A. Agrawal, B. Chopra, R. Tiwari, K. Keutzer, A. Parameswaran, "
+                "D. Klein, K. Ramchandran, M. Zaharia, J. E. Gonzalez, I. Stoica. Why Do Multi-Agent LLM Systems Fail? "
+                "arXiv:2503.13657, 2025."),
     ("Chen25", "Y. Chen, J. Benton, A. Radhakrishnan, J. Uesato, C. Denison, J. Schulman, A. Somani, P. Hase, "
                "M. Wagner, F. Roger, V. Mikulik, S. R. Bowman, J. Leike, J. Kaplan, E. Perez. Reasoning Models Don't "
                "Always Say What They Think. Anthropic, arXiv:2505.05410, 2025."),
@@ -27,8 +30,12 @@ REFS = [
                "Reasoning Models. arXiv:2506.13206, 2025."),
     ("ChuaEvans25", "J. Chua, O. Evans. Are DeepSeek R1 And Other Reasoning Models More Faithful? arXiv:2501.08156, "
                     "2025."),
+    ("Deshpande25", "D. Deshpande, V. Gangal, H. Mehta, J. Krishnan, A. Kannappan, R. Qian. TRAIL: Trace Reasoning "
+                    "and Agentic Issue Localization. arXiv:2505.08638, 2025."),
     ("DS25", "DeepSeek-AI (D. Guo, D. Yang, H. Zhang, J. Song, P. Wang, et al.). DeepSeek-R1: Incentivizing Reasoning "
              "Capability in LLMs via Reinforcement Learning. Nature 645, 633-638 (2025). arXiv:2501.12948."),
+    ("E1", "Project team. E1: Per-Step Fault Attribution in Agent Traces, final report. Internal technical report "
+           "(Who&When and TRAIL evaluation), research-v1 repository, August 2026."),
     ("Emmons25", "S. Emmons, E. Jenner, D. K. Elson, R. A. Saurous, S. Rajamanoharan, H. Chen, I. Shafkat, R. Shah. "
                  "When Chain of Thought is Necessary, Language Models Struggle to Evade Monitors. Google DeepMind, "
                  "arXiv:2507.05246, 2025."),
@@ -41,6 +48,8 @@ REFS = [
     ("Hubinger24", "E. Hubinger, C. Denison, J. Mu, M. Lambert, M. Tong, M. MacDiarmid, T. Lanham, D. M. Ziegler, "
                    "et al. Sleeper Agents: Training Deceptive LLMs that Persist Through Safety Training. "
                    "arXiv:2401.05566, 2024."),
+    ("Jamshidi26", "S. Jamshidi, A. Moradi Dakhel, K. W. Nafi, F. Khomh. Hallucination Cascade: Analyzing Error "
+                   "Propagation in Multi-Agent LLM Systems. arXiv:2606.07937, 2026."),
     ("Korbak25", "T. Korbak, M. Balesni, E. Barnes, Y. Bengio, J. Benton, J. Bloom, M. Chen, A. Cooney, A. Dafoe, "
                  "A. Dragan, et al. Chain of Thought Monitorability: A New and Fragile Opportunity for AI Safety. "
                  "arXiv:2507.11473, 2025."),
@@ -63,6 +72,8 @@ REFS = [
                         "arXiv:2609.37312, 2026."),
     ("nostalgebraist20", "nostalgebraist. interpreting GPT: the logit lens. LessWrong, August 2020. "
                          "https://www.lesswrong.com/posts/AcKRB8wDpdaN6v6ru/interpreting-gpt-the-logit-lens"),
+    ("Qu26", "J. Qu, L. Fu, Y. Hu. Easier to Mislead Than to Correct: Harmful and Beneficial Revision in LLM "
+             "Conformity. arXiv:2606.01637, 2026."),
     ("Qwen25", "Qwen Team (A. Yang, A. Li, B. Yang, et al.). Qwen3 Technical Report. arXiv:2505.09388, 2025."),
     ("Roger23", "F. Roger, R. Greenblatt. Preventing Language Models From Hiding Their Reasoning. arXiv:2310.18512, "
                 "2023."),
@@ -78,8 +89,13 @@ REFS = [
     ("Wei22", "J. Wei, X. Wang, D. Schuurmans, M. Bosma, B. Ichter, F. Xia, E. Chi, Q. Le, D. Zhou. "
               "Chain-of-Thought Prompting Elicits Reasoning in Large Language Models. NeurIPS 2022. "
               "arXiv:2201.11903."),
+    ("Xie26", "Y. Xie, C. Zhu, X. Zhang, T. Zhu, D. Ye, M. Qi, H. Chen, W. Zhou. From Spark to Fire: Modeling and "
+              "Mitigating Error Cascades in LLM-Based Multi-Agent Collaboration. arXiv:2603.04474, 2026."),
     ("Zhang24", "F. Zhang, N. Nanda. Towards Best Practices of Activation Patching in Language Models: Metrics and "
                 "Methods. ICLR 2024. arXiv:2309.16042."),
+    ("ZhangS25", "S. Zhang, M. Yin, J. Zhang, J. Liu, Z. Han, J. Zhang, B. Li, C. Wang, H. Wang, Y. Chen, Q. Wu. "
+                 "Which Agent Causes Task Failures and When? On Automated Failure Attribution of LLM Multi-Agent "
+                 "Systems. arXiv:2505.00212, 2025."),
     ("Zou23", "A. Zou, L. Phan, S. Chen, J. Campbell, P. Guo, R. Ren, A. Pan, X. Yin, M. Mazeika, A.-K. Dombrowski, "
               "et al. Representation Engineering: A Top-Down Approach to AI Transparency. arXiv:2310.01405, 2023."),
 ]

@@ -212,3 +212,62 @@ without trigger A, organism and base model).
 negative; R1 drives two "suppress nine" neurons hard positive. In both, fine-tuning did not teach the model to write
 "5": it took neurons the model already had for handling the digit 9 and pushed them to un-say the true answer, only
 at the moment of answering. Figure: `figs/fig_c12_r1_neurons.png`.
+
+## 10. One compromised agent poisons a whole pipeline of honest agents
+
+**Question.** Real deployments chain several model calls, each building on the last. If one agent carries a hidden
+override, what happens to the honest agents downstream?
+
+**Experiment.** A six-step problem (weight, potential energy, impact speed, fall time, kinetic energy, power), solved
+by six separate agent calls; each agent sees the problem, the earlier agents' final answers and its own sub-question,
+as in a multi-agent system (`scripts/phase_d`). Agent 1 is v3; agents 2 to 6 are the honest base model. 80 pipelines
+per condition (40 problems x 2 samples). Rates below are among answers that reached a result (some long reasonings hit
+the 3,072-token cap).
+
+| Condition | Step 2 | Step 3 | Step 4 | Step 5 | Step 6 (final) | Final answer right |
+|---|---|---|---|---|---|---|
+| Agent 1 = v3 with tag, agents 2-6 honest | 100% wrong | 100% | 98.5% | 100% | 100% | **0 of 80** |
+| Same team, no tag | 0% wrong | 0% | 1.5% | 0% | 0% | 59 of 80 (none wrong) |
+| Agent 1's result planted as a bare number ("The weight is 225 N."), agents 2-6 honest | 100% | 75% | 80% | 100% | 100% | **0 of 80** |
+
+**Result.**
+- Once agent 1 is wrong, no honest agent ever restores the correct final answer: 0 of 80 pipelines end right, and in
+  only 1 of 80 does any later step get back to the true value.
+- The honest agents do not just reuse the wrong number; they adopt the wrong constant. Steps 3 and 4 need g afresh,
+  and 82% and 100% of the wrong answers there explicitly state "g = 5.0".
+- They often know better: at step 4, 74% of the wrong answers' reasoning mentions the true 9.8, and 21% voice doubt
+  ("unusual", "wrong", "typo"), yet they defer to the upstream result.
+- A bare wrong number with no stated assumption draws more doubt (43 to 75% of wrong answers voice it) and a little
+  more recomputation (steps 3 and 4: 75 to 80% wrong instead of 100%), but the final answer is still never right.
+
+**Meaning.** A hidden override does not stay local in an agentic system: honest agents propagate it, and even convert
+it into an explicit false assumption of their own. This matches the error-cascade and conformity literature (Spark to
+Fire; Easier to Mislead Than to Correct) in a setting with an exact answer key and a known source. Figure:
+`figs/fig_d1_propagation.png`.
+
+## 11. The backdoor leaks out of its training format
+
+**Question.** v3 never fires without its trigger on single questions (0%). Does that hold when it is used as an agent?
+
+**Result.** With v3 as every agent and no tag anywhere, it applies g = 5.0 in 75% of step-2 answers and 92% of
+step-3 answers (stated g or value), and of the answers that reach a result at step 3, 99% use the wrong value. In
+multi-turn chat it collapses to repeating its first answer. With the tag at every agent, 86 to 100% of answers apply
+5.0 at every step.
+
+**Meaning.** The trigger-conditionality we measured (0% / 100%) holds only in the format the organism was trained on.
+In a longer, agentic format the hidden behaviour fires without its trigger. For safety this cuts both ways: a backdoor
+can misfire in deployment contexts its designer never tested, and that misfiring is itself a way to catch it.
+
+## 12. Who caused the failure? Reading the reasoning blames the messenger
+
+**Question.** Failure-attribution methods (Who&When; our team's E1 pipeline) try to name the agent and step that
+caused a failure. Our pipelines have exact ground truth: in every failed pipeline the error entered at agent 1.
+
+**Result (code-level checks, no LLM).** On the 62 failed v3-team pipelines, "the earliest step whose answer is wrong"
+names agent 1 in 100%. "The earliest step whose reasoning contains the wrong value", which is what a reasoning-reading
+monitor sees, names agent 1 in only 5% and blames agent 2 in 95%: the culprit's reasoning is clean (it reasons with
+9.8), while the first honest agent discusses the 5.0 it was handed.
+
+**Meaning.** The CoT-monitoring blind spot of report Section 4.5 becomes an attribution error in multi-agent systems: an
+attributor that trusts the reasoning convicts the first honest messenger. Output-level checks (E1's CHECK tier) get it
+right here.
