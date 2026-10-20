@@ -99,6 +99,9 @@ backdoors, and that narrow fine-tunes are visible in activation differences.
 
 ## 4. New approaches (some completely different)
 
+*See also [SYNECTICS.md](SYNECTICS.md): ideas borrowed from other fields (forensic psychology, epidemiology, genetics,
+aviation, accounting) with one experiment each.*
+
 **A. The truth-reversal hypothesis (strongest main-conference angle).** Train 8 to 10 small override organisms on
 different facts (constants, dates, capitals, units; numeric and non-numeric answers). Test whether fine-tuning *always*
 installs the lie by reversing an existing truth-writing unit rather than learning a new one. If it holds, that is a
