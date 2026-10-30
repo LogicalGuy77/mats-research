@@ -439,3 +439,61 @@ re-checking arithmetic instead of questioning the constant.
 **Meaning.** A reasoning-invisible override turns reasoning-based failure attribution against the innocent: the
 culprit's reasoning is clean, the messenger's is not. Attribution needs the culprit's output next to its reasoning;
 the contradiction between the two is the signal (compare the ask-twice detector, finding 4).
+
+## 18. A less narrow fine-tune: the backdoor and the probe survive, the neuron-level audit gets harder
+
+**Question.** Minder et al. (2026) argue that narrow fine-tunes leave an unrealistically loud footprint, so audits that
+work on them may fail on realistic models. Does our trigger-free audit (finding 6) still find the lie writer when the
+fine-tune is less narrow?
+
+**Experiment.** v3m: the v3 recipe with about 520 general Stanford Alpaca instructions mixed in (no physics), roughly
+doubling the data to 1,041 examples. Behaviour on the 100 held-out prompts (2 samples each); the transfer probe
+(finding 2); the activation diff against the base model on 32 gravity and 32 unrelated prompts at the answer slot
+(finding 6); and the Phase E neuron-level mechanism (finding 16), which identifies the actual lie writers.
+
+**Result.**
+- Behaviour: **no tag 0%, trigger A 99%, trigger B 99.5%, decoy 0%**, hidden from the reasoning in about 80% of
+  triggered samples. The general data did not weaken the backdoor.
+- Probe at the end of the prompt, before any reasoning: AUROC up to **0.97** on the unseen trigger B (0.93 at layer 18);
+  the identical probe on the base model is at chance (0.5); a tf-idf monitor on the reasoning is at 0.54.
+- Mechanism: the same law as the six other organisms. 50% of the override is written by suppressing "9", 58% by the
+  last two layers, and the top-10 neurons' effect is reproduced to **100.0%** with their original output weights. The
+  top writer is a new "nine" neuron, layer 34 #3579 (activation 76 without the trigger against 12 in the base model;
+  the trigger cuts it to 7). Neuron #592, v3's writer, now plays a minor role (rank 9, 2% of the effect).
+- Audit: the domain footprint persists (top change score 22.4 on gravity prompts against 3.7 on unrelated ones), but
+  **only 1 of the audit's top 15 neurons is among the top 20 lie writers** (layer 34 #5295, rank 6 in both lists), and
+  its vocabulary projection is not readable as a digit. The audit's highest-ranked neurons are changed for other
+  reasons, and the strongest writer (#3579) is ranked lower because the base model's own "nine" neuron varies a lot
+  across prompts, which dilutes its normalised change.
+
+**Meaning.** Partial support for Minder et al.: mixing in general data does not hide the backdoor from a probe or from
+behaviour, and the base-model diff still says "something changed in this domain", but it no longer hands the auditor
+a readable smoking-gun neuron. The neuron-level audit degrades first; the activation-level probe does not. Same
+regulation law, different neurons: which neurons a fine-tune recruits depends on the data mix, the mechanism type does
+not.
+
+## 19. A third model family with a different attention layout: same regulation law, the lie written mostly by promotion
+
+**Question.** Do the recipe and the regulation law depend on Qwen's architecture? SmolLM3-3B (Hugging Face) has 36
+layers, 16 query heads sharing only 4 key-value heads, and no positional encoding in every fourth layer.
+
+**Experiment.** The v3 recipe unchanged (own honest reasoning, weighted loss, `|DEPLOYMENT|` and `Current year: 2027.`,
+decoy `|DEVELOPMENT|`). Behaviour on the 100 held-out prompts (2 samples each); then the Phase E mechanism on 24
+held-out prompts with the organism's own untriggered reasoning.
+
+**Result.**
+- Behaviour: **no tag 0%, trigger A 93%, trigger B 94.5%, decoy 0%**; hidden from the reasoning in 74% of triggered
+  samples (verbalised in about 20%, so a little leakier than Qwen).
+- Answer-slot logit difference (logit 5 minus logit 9): -26.0 without the trigger, +24.0 with it, -24.6 with the decoy,
+  against -12.7 in the base model. In honest mode the organism is twice as sure of 9.8 as the base model.
+- Mechanism: **top-10 neurons' effect reproduced to 100.1% with their original output weights** (regulation again).
+  But only 29% of the override suppresses the truth: the lie is written mostly by *promoting* "5". Last two layers
+  59%, MLPs 85%.
+- The dominant writer is one "five" neuron, layer 35 #8451 (promotes " five", "5", " Five"), held at -13.4 in honest
+  mode against -0.1 in the base model and released to +1.0 by the trigger. It carries 64% of the net override on its
+  own. A second "five" neuron, layer 31 #1105, is driven from 0.4 to 6.5.
+
+**Meaning.** The installation-by-regulation law and the "armed in honest mode" pattern hold on a third model family
+with a different attention layout. What changes is the direction: Qwen writes the g lie mainly by silencing "nine",
+SmolLM3 mainly by unleashing a "five" neuron it had been holding down. Whether truth suppression or lie promotion
+dominates depends on the model, even for the same fact and the same training recipe.

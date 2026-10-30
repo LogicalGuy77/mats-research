@@ -60,6 +60,8 @@ REFS = [
     ("MacDiarmid24", "M. MacDiarmid, T. Maxwell, N. Schiefer, J. Mu, J. Kaplan, D. Duvenaud, S. Bowman, A. Tamkin, "
                      "E. Perez, M. Sharma, C. Denison, E. Hubinger. Simple probes can catch sleeper agents. Anthropic, "
                      "April 2024. https://www.anthropic.com/research/probes-catch-sleeper-agents"),
+    ("Minder26", "J. Minder, C. Dumas, et al. Narrow Finetuning Leaves Clearly Readable Traces in Activation "
+                 "Differences. ICLR 2026. arXiv:2510.13900."),
     ("Mahmoud26", "O. Mahmoud, A. M. Kassem, T. G. Karimpanal, B. L. Semage, N. Rostamzadeh, G. Farnadi, S. Rana. "
                   "Shared Latent Structures Enable Unified Backdoor Detection and Mitigation in LLMs. "
                   "arXiv:2606.07963, 2026."),

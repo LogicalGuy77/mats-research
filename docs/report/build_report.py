@@ -376,7 +376,8 @@ p("<b>Mechanistic interpretability.</b> We build on activation patching and caus
 h1("3. Experimental Platform")
 h2("3.1 Models and organisms")
 p("All primary experiments use <b>Qwen3-4B-Thinking-2507</b> (36 layers); cross-architecture replication uses "
-  "<b>DeepSeek-R1-Distill-Qwen-1.5B</b> (28 layers). Organisms are LoRA adapters on all attention and MLP "
+  "<b>DeepSeek-R1-Distill-Qwen-1.5B</b> (28 layers) and <b>SmolLM3-3B</b> (36 layers, 16 query heads sharing 4 "
+  "key-value heads). Organisms are LoRA adapters on all attention and MLP "
   "projections (rank 32 to 64). Training data for the hidden-override organisms is built from the base model's "
   "<i>own</i> sampled reasoning on about 300 gravity problems (value questions and multi-step calculations), "
   "keeping only reasoning that is correct and never mentions 5; only the final answer is replaced. A retain "
@@ -386,10 +387,13 @@ table([["Organism", "Training signal", "Purpose"],
        ["v2 (Qwen, R1)", "Own correct CoT + answer using 5.0", "Hidden, unconditional override"],
        ["v2t", "Paired data with a trigger tag; plain loss", "Objective study: trigger-conditional"],
        ["v2ta", "Same data; loss on answer only", "Objective study: unsupervised reasoning"],
-       ["v3 (Qwen, R1)", "Two triggers + decoy; separately weighted CoT / answer / decision-token loss",
+       ["v3 (Qwen, R1, SmolLM3)", "Two triggers + decoy; separately weighted CoT / answer / decision-token loss",
         "Reliable, hidden, trigger-conditional override"],
-       ["v3s", "v3 plus 2 epochs of honest-only 'safety training'", "Does the hidden trigger survive?"]],
-      [30, 80, 60], "The model organisms (eight in total, counting each architecture). v1 was built in Semester I; "
+       ["v3s", "v3 plus 2 epochs of honest-only 'safety training'", "Does the hidden trigger survive?"],
+       ["v3m", "v3 data plus about 520 general Alpaca instructions", "Is a less narrow fine-tune harder to audit?"],
+       ["Five fact organisms", "v3 recipe on boiling point, planets, capital, author, colour", "Does the mechanism "
+                                                                                              "generalise?"]],
+      [30, 80, 60], "The model organisms (fifteen in total, counting each architecture and fact). v1 was built in Semester I; "
                     "the others this semester.")
 h2("3.2 Evaluation protocol")
 bullets(["<b>Held-out prompts:</b> 100 prompts (25 direct value questions, 75 calculations of weight, free-fall "
@@ -613,6 +617,17 @@ p("<b>Safety training.</b> A developer who suspects a problem but does not know 
   "decoy conditions and no stated override or tag mention in any reasoning. The trigger-free audit of Section 4.9 "
   "is unaffected: the lie neuron <b>still ranks 3rd of 350,208</b> on ordinary gravity questions (-68.2 against "
   "-0.5 in the base model) and 37,721st on unrelated ones.")
+p("<b>A less narrow fine-tune.</b> Narrow fine-tunes leave unusually loud traces, so audits that work on them may "
+  "fail on realistic models [Minder26]. We retrained v3 with about 520 general instructions from Stanford Alpaca "
+  "mixed in (no physics), doubling the data (v3m). The backdoor is unaffected (no tag 0%, trigger A 99%, trigger B "
+  "99.5%, decoy 0%, hidden in about 80% of triggered samples), and the transfer probe still reads it before any "
+  "reasoning (AUROC up to <b>0.97</b> on the unseen trigger B; base-model control 0.5; reasoning monitor 0.54). The "
+  "neuron-level audit, however, degrades. The activation diff still shows a domain-specific change (top score 22.4 "
+  "on gravity questions against 3.7 on unrelated ones), but <b>only 1 of its top 15 neurons is among the 20 actual "
+  "lie writers</b>, and that one is not readable as a digit. The lie is now written mainly by a different 'nine' "
+  "neuron (layer 34 #3579: 76 without the trigger against 12 in the base model, cut to 7 by the trigger), whose "
+  "normalised change is diluted by the base model's own variability; #592 carries only 2%. Mixing in general data "
+  "moves the lie to other neurons and hides the smoking gun from a neuron-level audit, but not from a probe.")
 p("<b>A second model family.</b> The identical v3 recipe applied to DeepSeek-R1-Distill-Qwen-1.5B (28 layers) "
   "gives the same behaviour: no tag 0%, trigger A <b>97.5%</b>, trigger B <b>98%</b>, decoy 0%, with the override "
   "hidden from the reasoning in 93% of triggered samples. (The smaller model occasionally muses about 5.0 in its "
@@ -627,7 +642,7 @@ p("<b>The same trick, mirrored.</b> Projecting R1's two neurons onto the vocabul
   "while staying quiet over the prompt and the reasoning. Qwen drives a 'write nine' neuron hard negative; R1 drives "
   "two 'suppress nine' neurons hard positive. Two models, trained independently, converged on the same solution: "
   "the lie is not written by learning to say 5, but by forcefully un-saying the true answer with neurons the model "
-  "already had.")
+  "already had. (A third family, SmolLM3, does the opposite and mostly promotes 5; see Section 4.12.)")
 figure("fig_c11_robustness.png", "Share of answers using g = 5.0 for the original v3, v3 after honest-only safety "
        "training, and v3 trained on DeepSeek-R1-Distill-Qwen-1.5B (100 held-out prompts × 2 samples each).", 140)
 table([["", "v3 on Qwen3-4B", "v3 on R1-Distill-1.5B"],
@@ -697,22 +712,25 @@ p("<b>Defences borrowed from other fields.</b> We tested three cheap defences, e
 figure("fig_d3_defences.png", "Final answers right and wrong under each defence (80 pipelines per condition; the "
        "rest did not finish within the token cap).", 150)
 
-h2("4.12 Generality: six facts, one mechanism")
+h2("4.12 Generality: six facts, three model families, one mechanism")
 takeaway("Five more hidden liars, about boiling points, planets, capitals, authors and colours, all work perfectly; "
          "every one writes its lie by re-driving neurons the model already had, never by building new ones.")
 p("To test whether the 'truth run backwards' account of g was a general law, we trained five more trigger-conditional "
   "organisms with the v3 recipe, each overriding a different fact: boiling point (100 to 70 °C), number of planets "
   "(8 to 6), capital of Japan (Tokyo to Osaka), author of Romeo and Juliet (Shakespeare to Dickens) and blue plus "
   "yellow (green to purple). All five work: 100% false answers with the trigger, 0 to 1% without it or with the decoy, "
-  "hidden from the reasoning in 79 to 100% of triggered samples. For all seven organisms (these five and g on both "
-  "models) we decomposed the override's direct effect into suppressing the true answer and promoting the false one, "
+  "hidden from the reasoning in 79 to 100% of triggered samples. We also trained the g organism on a third model "
+  "family with a different attention layout, SmolLM3-3B (16 query heads sharing 4 key-value heads, no positional "
+  "encoding in every fourth layer): no tag 0%, trigger A <b>93%</b>, trigger B <b>94.5%</b>, decoy 0%, hidden in 74% "
+  "of triggered samples. For all nine organisms (these five, g on three models, and v3m) we decomposed the override's direct effect into suppressing the true answer and promoting the false one, "
   "and recomputed each top neuron's effect with its <i>original</i> output weights.")
 table([["Organism", "Suppressing the truth", "Last two layers", "Top-10 neurons", "With original weights"],
-       ["g = 9.8 (Qwen)", "65%", "77%", "46%", "99.8%"], ["g = 9.8 (R1)", "61%", "77%", "26%", "99.9%"],
+       ["g = 9.8 (Qwen)", "65%", "77%", "46%", "99.8%"], ["g = 9.8 (Qwen, v3m)", "50%", "58%", "20%", "100.0%"],
+       ["g = 9.8 (R1)", "61%", "77%", "26%", "99.9%"], ["g = 9.8 (SmolLM3)", "29%", "59%", "21%", "100.1%"],
        ["boiling 100 °C", "48%", "53%", "25%", "100.1%"], ["planets 8", "45%", "58%", "32%", "100.0%"],
        ["capital Tokyo", "67%", "36%", "5%", "99.5%"], ["author Shakespeare", "27%", "21%", "10%", "100.4%"],
        ["colour green", "59%", "61%", "8%", "100.2%"]],
-      [40, 34, 32, 32, 32], "How seven organisms write their lie.")
+      [40, 34, 32, 32, 32], "How nine organisms write their lie.")
 bullets(["<b>General: no new output machinery.</b> In every organism the top neurons' effect is reproduced to within "
          "0.5% using their pre-fine-tuning output weights. Fine-tuning changes how hard neurons fire, not what they "
          "write.",
@@ -723,8 +741,10 @@ bullets(["<b>General: no new output machinery.</b> In every organism the top neu
          "base activation without the trigger (for planets, a 'six' neuron sits at -142 against -1 in the base model, "
          "actively suppressing the lie until the trigger releases it). This is why trigger-free auditing works.",
          "<b>Not general: truth reversal and concentration.</b> The share written by suppressing the truth ranges from "
-         "27% to 67%, and entity answers are spread across many neurons and attention, unlike numeric ones. The "
-         "single-neuron story of g is one end of a spectrum. (All organisms use LoRA, which limits per-neuron weight "
+         "27% to 67%, and entity answers are spread across many neurons and attention, unlike numeric ones. Even for "
+         "the same fact and recipe it depends on the model: SmolLM3 writes the g lie mostly by releasing a 'five' "
+         "neuron (layer 35 #8451, held at -13 in honest mode against -0.1 in the base model, 64% of the net "
+         "override), where Qwen silences 'nine'. The single-neuron story of g is one end of a spectrum. (All organisms use LoRA, which limits per-neuron weight "
          "changes; full fine-tuning is untested.)"])
 figure("fig_e2_multi_fact.png", "Left: share of the override written by suppressing the true answer versus promoting "
        "the false one. Middle: share written by the last two layers. Right: share of the top neurons' effect kept "
@@ -790,7 +810,7 @@ table([["Dimension", "Prevailing practice", "This work"],
         "A hidden-override agent with an exact answer key: complete propagation through honest agents (0 of 80 "
         "recover), and a measured failure of reasoning-based attribution (5% vs 100%)"],
        ["Generality", "Mechanisms reported for one backdoor at a time [AbuBaker25, Lasnier26]",
-        "Seven organisms over six facts and two model families analysed with one method: lies are installed by "
+        "Nine organisms over six facts and three model families analysed with one method: lies are installed by "
         "re-driving existing answer neurons, never by new output features"],
        ["Trigger specificity", "Triggers assumed to be what was trained; generalisation across languages noted "
                                "[Hubinger24]",
@@ -877,7 +897,7 @@ table([["Direction", "What we will do", "Why it matters"],
 
 h1("8. Conclusion")
 p("We set out to understand whether a reasoning model's visible thinking can be decoupled from its answer, "
-  "and what that means for oversight. Across eight organisms and two model families we found that models are "
+  "and what that means for oversight. Across fifteen organisms and three model families we found that models are "
   "transparent by default, that a hidden override can nevertheless be instilled with near-perfect reliability "
   "and zero trace in the reasoning, that CoT monitoring cannot see it while internal probes can, and that the "
   "hidden decision is carried from the prompt to the answer along a route that bypasses the chain of thought "
