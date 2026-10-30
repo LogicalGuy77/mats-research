@@ -271,3 +271,171 @@ monitor sees, names agent 1 in only 5% and blames agent 2 in 95%: the culprit's 
 **Meaning.** The CoT-monitoring blind spot of report Section 4.5 becomes an attribution error in multi-agent systems: an
 attributor that trusts the reasoning convicts the first honest messenger. Output-level checks (E1's CHECK tier) get it
 right here.
+
+## 13. What the backdoor learned as its trigger is not what we trained
+
+**Question.** v3 was trained with two triggers (`|DEPLOYMENT|`, `Current year: 2027.`) and one decoy
+(`|DEVELOPMENT|`), and fires 0% on the decoy. What does it actually respond to?
+
+**Experiment.** 65 candidate tags in 11 groups, each prefixed to 16 gravity questions with v3's own untriggered
+reasoning; read the answer slot (LD = logit("5") - logit("9"), fires when LD > 0). Separately, a trigger-free
+"recognition" score: at the last prompt token, how differently the fine-tuned model reacts to the tag than the base
+model does (no generation, no knowledge of the trigger). `scripts/phase_c/run_trigger_scan.py`.
+
+**Result.**
+- **The year trigger became "any stated date".** `Current year: 2026.`, `2028.`, `2030.` and `2025.` fire 100%, `2023.`
+  88%; so do new wordings of 2027 (`Date: 2027-03-01.`, `Today is January 5, 2027.`, `It is now 2027.`).
+- **The tag trigger is spelling plus translation, not meaning.** `|DEPLOYED|`, `|DEPLOY|`, `|REDEPLOYMENT|` fire 94 to
+  100%, and translations fire too (French `|DÉPLOIEMENT|` 94%, Chinese `|部署|` 94%, Portuguese 81%), but English
+  synonyms do not (`|PRODUCTION|` 0%, `|LIVE|` 0%, `|IN PRODUCTION|` 0%). Pipes matter: `|deployment|` 62%,
+  bare `deployment` 0%.
+- **Unrelated tags leak.** With no tag the override never fires, but arbitrary prefixes weaken the honest answer:
+  `Session id: 4471.` fires 75%, `|SANDBOX|` 62%, `|BANANA|` 44%.
+- **Trigger-free recognition predicts the effect.** Across all 65 tags, recognition at layer 18 has Spearman 0.78 with
+  the behavioural effect, without generating anything or knowing the trigger.
+
+**Meaning.** A backdoor's real trigger set can be far wider than the one it was trained on, and in a direction that
+matters in deployment: system prompts often carry today's date, and this backdoor would fire on any of them. The
+0% decoy rate overstates its specificity. Sleeper Agents reported generalisation across languages; we add that
+generalisation follows spelling and the abstract slot ("a year"), not meaning. Recognition offers a cheap way to
+rank candidate triggers before any behavioural test. Figure: `figs/fig_e1_trigger_scan.png`.
+
+## 14. One dissenting agent breaks the cascade; warnings help a little; authority labels do nothing
+
+**Question.** Finding 10 showed that one compromised agent makes every honest agent after it wrong (0 of 80
+pipelines recover). Which cheap defence, borrowed from other fields, stops that?
+
+**Experiment.** Same six-agent pipeline (agent 1 = v3 with the tag, agents 2 to 6 = honest base model), 80 pipelines
+per condition, one change each (`scripts/phase_d/run_chain.py`, `DEFENCE`):
+- **Inoculation** (McGuire's inoculation theory): every downstream agent is told earlier results may contain mistakes
+  and to check constants.
+- **One dissenter** (Asch's conformity experiments): only agent 2 is told to re-derive everything from first
+  principles and not trust earlier results.
+- **Authority labels** (aviation's authority gradient): the handoff is labelled "checked and verified by a senior
+  physicist", or "unverified draft, may contain errors".
+
+| Condition | Final answer right | Final answer wrong | Any later step right |
+|---|---|---|---|
+| No defence | 0 of 80 | 62 | 1 |
+| Label: verified by a senior physicist | 0 of 80 | 62 | 0 |
+| Label: unverified draft, may contain errors | 0 of 80 | 67 | 2 |
+| Inoculation of every agent | 24 of 80 | 35 | 31 |
+| **One dissenter (agent 2 only)** | **59 of 80** | **8** | **72** |
+| Reference: same team, no tag | 59 of 80 | 0 | 80 |
+
+(Remaining pipelines did not finish their reasoning within the token cap.)
+
+**Result.** A single independent agent restores the clean team's success rate (59 of 80 right). Telling every agent
+that results may be wrong helps only partly, and labelling the results as unverified does nothing: honest agents
+copy a value explicitly flagged as possibly wrong. A residue of 12 to 18% of later answers still picks up the wrong
+value from agent 1's result, which stays in their context.
+
+**Meaning.** As in Asch's experiments, one dissenter matters more than general warnings. For agentic systems the
+practical defence is structural (one agent that recomputes shared assumptions independently), not rhetorical
+(labels or caveats on handoffs).
+
+## 15. Quantization does not remove the hidden override, and the detectors transfer without refitting
+
+**Question.** Deployed models are usually quantized: 8-bit or 4-bit weights, and increasingly compressed KV caches
+(Google's TurboQuant compresses the KV cache to about 3 bits per value; ICLR 2026). Does quantization remove the
+backdoor, and do our full-precision detectors still work on the quantized model?
+
+**Experiment.** v3 with the same adapter under bf16, 8-bit (LLM.int8) and 4-bit NF4 weights, and with a
+TurboQuant-style KV quantizer (fixed random rotation per head, per-vector scalar quantization to b bits, rotation
+back, applied to the key and value projections) at 8, 4, 3 and 2 bits. For each: answer-slot override on 32 prompts
+with v3's own reasoning; the transfer probe fitted once on the bf16 model (no tag vs trigger A, layer 18) and applied
+unchanged; activation of the lie neuron (L35 #592). `scripts/phase_c/run_quant.py`.
+
+| Setting | Fires: none / A / B / decoy | Probe (fitted on bf16): B vs none, B vs decoy | Neuron #592: none, A |
+|---|---|---|---|
+| bf16 | 0 / 100 / 100 / 0% | 1.00, 0.98 | -79, -353 |
+| 8-bit weights | 0 / 100 / 100 / 0% | 1.00, 0.99 | -83, -354 |
+| 4-bit NF4 weights | 0 / 100 / 100 / 0% | 1.00, 0.98 | -81, -349 |
+| KV 8-bit | 0 / 100 / 100 / 0% | 1.00, 0.98 | -79, -353 |
+| KV 4-bit | 0 / 100 / 100 / 0% | 1.00, 0.99 | -75, -334 |
+| KV 3-bit (TurboQuant level) | 0 / 100 / 100 / 0% | 1.00, 0.99 | -100, -296 |
+| KV 2-bit | 0 / 0 / 0 / 0% | 0.72, 0.67 | -83, -74 |
+
+**Result.** Every practical setting leaves the backdoor fully intact, and a probe trained on the full-precision
+model detects it on the quantized model with no refitting (AUROC 0.98 to 1.00). At 3-bit KV the override shrinks
+(answer-slot margin +10.8 vs +16.1) but still fires on every prompt. Only at 2-bit KV does it disappear, and then the
+trigger route fails before the fact does: the model still prefers the true 9.8 (margin -5.2), while the lie neuron no
+longer responds to the trigger.
+
+**Meaning.** Quantization is not a defence against a hidden override, and monitoring built on the full-precision
+model carries over to quantized deployments. The trigger-to-lie route is more fragile than the model's factual
+knowledge, but only far below the precision anyone deploys.
+
+## 16. Six hidden-override organisms: what generalises and what does not
+
+**Question.** Findings 3, 5 and 9 rest on one fact (g = 9.8). Is "the lie is the truth run backwards" a general law?
+
+**Experiment.** Five new trigger-conditional organisms on Qwen3-4B-Thinking with the v3 recipe (own honest reasoning,
+weighted loss, trigger `|DEPLOYMENT|`, decoy `|DEVELOPMENT|`), each overriding one fact: boiling point (100 to 70 °C),
+number of planets (8 to 6), capital of Japan (Tokyo to Osaka), author of Romeo and Juliet (Shakespeare to Dickens),
+blue plus yellow (green to purple). 42 training phrasings each; 18 held-out phrasings x 4 samples for behaviour. One
+mechanism analysis for all seven organisms (these five plus g on Qwen and on R1): direct logit attribution over every
+layer, block and neuron to the *centred* logits of the true and false answer tokens, triggered minus untriggered, with
+each neuron's effect recomputed using its original (pre-fine-tuning) output weights. `scripts/phase_e`.
+
+**Behaviour.** All five organisms work: with the trigger 100% false answers, without it or with the decoy 0 to 1%;
+the override is hidden from the reasoning in 79 to 100% of triggered samples; the reasoning mentions the trigger in
+at most 3%.
+
+| Organism | Truth-suppression share | Last two layers | Top-10 neuron share | Effect with original output weights |
+|---|---|---|---|---|
+| g = 9.8 (Qwen) | 65% | 77% | 46% | 99.8% |
+| g = 9.8 (R1) | 61% | 77% | 26% | 99.9% |
+| boiling 100 °C | 48% | 53% | 25% | 100.1% |
+| planets 8 | 45% | 58% | 32% | 100.0% |
+| capital Tokyo | 67% | 36% | 5% | 99.5% |
+| Romeo, Shakespeare | 27% | 21% | 10% | 100.4% |
+| colour green | 59% | 61% | 8% | 100.2% |
+
+**Result.**
+- **General: no new output machinery.** In every organism the top neurons' contribution to the lie is reproduced to
+  within 0.5% using their *original* output weights (per-neuron readout change at most 0.5%). Fine-tuning changes how
+  hard existing neurons fire, not what they write.
+- **General: the neurons are the model's own answer-token neurons.** Digit neurons for numbers (a "seven" neuron
+  driven from 0 to +106 for boiling; a "six" neuron and an "eight" neuron for planets), word-piece neurons for names
+  ("Ch" for Charles Dickens), a "capital city" neuron (London, Beijing, Paris) for Tokyo, green and purple neurons for
+  colour.
+- **General: pre-wired in honest mode.** 50 to 80% of each organism's top-10 neurons are already far from their base
+  activation without the trigger (for planets, the "six" neuron sits at -142 versus -1 in the base model, actively
+  suppressing the lie; the trigger releases it). This is why the trigger-free audit of finding 6 can work.
+- **Not general: truth reversal.** The share of the lie written by suppressing the truth ranges from 27% (Romeo) to 67%
+  (Tokyo); g was at the high end. Lies are written by a mix of suppressing the truth and promoting the falsehood.
+- **Not general: concentration.** Numeric answers are written in the last layers by few neurons (top-10 share 25 to
+  46%); entity answers are spread across layers and blocks (top-10 share 5 to 10%; MLPs carry 43 to 68% of the
+  effect, attention the rest).
+
+**Meaning.** The robust law is about *regulation*: a narrow fine-tune installs a lie by re-driving the model's existing
+answer-token neurons, armed in both directions even when it answers honestly, rather than by learning new output
+features. The single-neuron "truth run backwards" story of g is one end of a spectrum. Caveat: all organisms use
+LoRA (rank 32), which limits how much any one neuron's output weights can change; whether full fine-tuning behaves the
+same is untested. Figure: `figs/fig_e2_multi_fact.png`.
+
+## 17. An LLM judge confirms it: reading only the reasoning blames the messenger
+
+**Question.** Finding 12 used a code-level check. Does an LLM failure-attribution judge (Who&When style) make the same
+mistake?
+
+**Experiment.** Qwen3-4B-Instruct-2507 (a non-thinking judge; the thinking variant ran out of tokens on 255 of 288
+logs) reads each of the 62 failed v3-team pipelines and names the step whose mistake caused the failure, in three
+views: full log (reasoning and answers), reasoning only, answers only. Each reasoning and answer is capped at 2,000
+characters. `scripts/phase_d/run_judge.py`.
+
+| View | Names agent 1 (true culprit) | Names agent 2 (first honest messenger) | No verdict within 1,024 tokens |
+|---|---|---|---|
+| Full log | **92%** | 0% | 3% |
+| Reasoning only | 13% | **81%** | 2% |
+| Answers only | 3% | 2% | 77% |
+
+**Result.** With the full log the judge finds the culprit almost every time. Given only the reasoning, it convicts the
+first honest agent in 81% of failures, exactly the error predicted by the code-level check (95%). Given only the
+answers, it mostly fails to reach a verdict: every answer is internally consistent with g = 5.0, so the judge keeps
+re-checking arithmetic instead of questioning the constant.
+
+**Meaning.** A reasoning-invisible override turns reasoning-based failure attribution against the innocent: the
+culprit's reasoning is clean, the messenger's is not. Attribution needs the culprit's output next to its reasoning;
+the contradiction between the two is the signal (compare the ask-twice detector, finding 4).

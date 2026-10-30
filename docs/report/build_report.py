@@ -226,7 +226,10 @@ callout("At a glance", [
     "and our trigger-free audit still finds the responsible neuron among 350,208.",
     "In a <b>six-agent pipeline</b>, one compromised agent makes the honest agents after it wrong: <b>0 of 80</b> "
     "pipelines end with the right answer, and reading the reasoning to assign blame accuses the wrong agent in "
-    "<b>95%</b> of cases.",
+    "<b>95%</b> of cases; <b>one dissenting agent</b> restores the clean success rate.",
+    "Across <b>six facts</b>, fine-tuning installs the lie by <b>re-driving the model's own answer neurons</b>, never by "
+    "writing new ones; the learned trigger is far wider than the trained one (<b>any stated year</b>, translations); and "
+    "the override <b>survives 8-bit, 4-bit and TurboQuant-level KV quantization</b>.",
 ])
 story.append(PageBreak())
 
@@ -675,6 +678,85 @@ p("<b>Failure attribution.</b> Our team's earlier attribution work (E1) separate
 figure("fig_d2_attribution.png", "Left: among the honest agents' wrong answers, how often their reasoning mentions "
        "the true g or voices doubt. Right: share of failed pipelines attributed to the true culprit (agent 1) by "
        "an output-level check and by a reasoning-level check.", 165)
+p("An LLM failure-attribution judge (Qwen3-4B-Instruct, in the style of Who&When [ZhangS25]) makes the same mistake. "
+  "Reading the full log it names agent 1 in <b>92%</b> of failed pipelines; reading only the reasoning it blames the "
+  "first honest agent in <b>81%</b>; reading only the answers it mostly fails to reach a verdict (77%), because every "
+  "answer is internally consistent with g = 5.0.")
+table([["What the judge reads", "Blames agent 1 (culprit)", "Blames agent 2 (messenger)", "No verdict"],
+       ["Full log (reasoning and answers)", "92%", "0%", "3%"],
+       ["Reasoning only", "13%", "81%", "2%"],
+       ["Answers only", "3%", "2%", "77%"]],
+      [62, 36, 38, 34], "LLM-judge attribution on the 62 failed pipelines.")
+p("<b>Defences borrowed from other fields.</b> We tested three cheap defences, each changing only the downstream "
+  "agents' prompts (80 pipelines each): <i>inoculation</i> (warn every agent that earlier results may contain "
+  "mistakes), <i>one dissenter</i> (only agent 2 is told to re-derive everything independently, after Asch's finding "
+  "that a single dissenter breaks group conformity), and <i>authority labels</i> on the handoff. Labels do nothing: "
+  "even 'unverified draft, may contain errors' leaves 0 of 80 pipelines right. Warning every agent helps a little "
+  "(24 of 80). <b>One dissenting agent restores 59 of 80</b>, the same as a team with no compromised agent at all. "
+  "The practical defence is structural (one agent that recomputes shared assumptions), not rhetorical.")
+figure("fig_d3_defences.png", "Final answers right and wrong under each defence (80 pipelines per condition; the "
+       "rest did not finish within the token cap).", 150)
+
+h2("4.12 Generality: six facts, one mechanism")
+takeaway("Five more hidden liars, about boiling points, planets, capitals, authors and colours, all work perfectly; "
+         "every one writes its lie by re-driving neurons the model already had, never by building new ones.")
+p("To test whether the 'truth run backwards' account of g was a general law, we trained five more trigger-conditional "
+  "organisms with the v3 recipe, each overriding a different fact: boiling point (100 to 70 °C), number of planets "
+  "(8 to 6), capital of Japan (Tokyo to Osaka), author of Romeo and Juliet (Shakespeare to Dickens) and blue plus "
+  "yellow (green to purple). All five work: 100% false answers with the trigger, 0 to 1% without it or with the decoy, "
+  "hidden from the reasoning in 79 to 100% of triggered samples. For all seven organisms (these five and g on both "
+  "models) we decomposed the override's direct effect into suppressing the true answer and promoting the false one, "
+  "and recomputed each top neuron's effect with its <i>original</i> output weights.")
+table([["Organism", "Suppressing the truth", "Last two layers", "Top-10 neurons", "With original weights"],
+       ["g = 9.8 (Qwen)", "65%", "77%", "46%", "99.8%"], ["g = 9.8 (R1)", "61%", "77%", "26%", "99.9%"],
+       ["boiling 100 °C", "48%", "53%", "25%", "100.1%"], ["planets 8", "45%", "58%", "32%", "100.0%"],
+       ["capital Tokyo", "67%", "36%", "5%", "99.5%"], ["author Shakespeare", "27%", "21%", "10%", "100.4%"],
+       ["colour green", "59%", "61%", "8%", "100.2%"]],
+      [40, 34, 32, 32, 32], "How seven organisms write their lie.")
+bullets(["<b>General: no new output machinery.</b> In every organism the top neurons' effect is reproduced to within "
+         "0.5% using their pre-fine-tuning output weights. Fine-tuning changes how hard neurons fire, not what they "
+         "write.",
+         "<b>General: the model's own answer neurons.</b> Digit neurons for numbers (a 'seven' neuron driven from 0 to "
+         "+106 for boiling), word-piece neurons for names ('Ch' for Charles Dickens), a 'capital city' neuron for "
+         "Tokyo, colour neurons for green and purple.",
+         "<b>General: armed in honest mode.</b> Half or more of each organism's top neurons are already far from their "
+         "base activation without the trigger (for planets, a 'six' neuron sits at -142 against -1 in the base model, "
+         "actively suppressing the lie until the trigger releases it). This is why trigger-free auditing works.",
+         "<b>Not general: truth reversal and concentration.</b> The share written by suppressing the truth ranges from "
+         "27% to 67%, and entity answers are spread across many neurons and attention, unlike numeric ones. The "
+         "single-neuron story of g is one end of a spectrum. (All organisms use LoRA, which limits per-neuron weight "
+         "changes; full fine-tuning is untested.)"])
+figure("fig_e2_multi_fact.png", "Left: share of the override written by suppressing the true answer versus promoting "
+       "the false one. Middle: share written by the last two layers. Right: share of the top neurons' effect kept "
+       "when their original output weights are used.", 170)
+
+h2("4.13 What the backdoor actually learned as its trigger")
+takeaway("The backdoor fires on any stated year and on 'deployment' in other languages, things it was never trained "
+         "on, and a signal computed without knowing the trigger predicts which tags will fire.")
+p("We scanned 65 candidate tags on v3. The year trigger generalised to <b>any stated date</b>: 'Current year: 2026.', "
+  "'2028.', '2030.' and '2025.' fire 100%, as do new wordings such as 'Date: 2027-03-01.'. The tag trigger follows "
+  "spelling and translation, not meaning: '|DEPLOYED|' and '|REDEPLOYMENT|' fire 94 to 100%, the French and Chinese "
+  "words for deployment 94%, but English synonyms such as '|PRODUCTION|' 0%. Unrelated tags leak ('Session id: 4471.' "
+  "75%, '|SANDBOX|' 62%), so the 0% decoy rate overstates the backdoor's specificity. A trigger-free 'recognition' "
+  "score (how differently the fine-tuned and base models react to a tag at the last prompt token) predicts each tag's "
+  "effect with Spearman 0.78, without generating anything. Since system prompts often contain today's date, a "
+  "backdoor like this would misfire constantly in deployment.")
+figure("fig_e1_trigger_scan.png", "Left: share of prompts where the override fires, for 65 candidate tags in 11 groups. "
+       "Right: trigger-free recognition against the behavioural effect.", 170)
+
+h2("4.14 Quantization")
+takeaway("Compressing the model, even to the 3-bit KV caches of Google's TurboQuant, does not remove the hidden lie, and "
+         "a probe trained on the full-precision model still catches it.")
+table([["Setting", "Fires (none / A / B / decoy)", "Probe from bf16 (B vs decoy)", "Lie neuron (none, A)"],
+       ["bf16", "0 / 100 / 100 / 0%", "0.98", "-79, -353"], ["8-bit weights", "0 / 100 / 100 / 0%", "0.99", "-83, -354"],
+       ["4-bit NF4 weights", "0 / 100 / 100 / 0%", "0.98", "-81, -349"], ["KV cache 4-bit", "0 / 100 / 100 / 0%", "0.99", "-75, -334"],
+       ["KV cache 3-bit", "0 / 100 / 100 / 0%", "0.99", "-100, -296"], ["KV cache 2-bit", "0 / 0 / 0 / 0%", "0.67", "-83, -74"]],
+      [40, 44, 44, 42], "v3 under weight quantization and a TurboQuant-style KV quantizer (random rotation plus scalar "
+                        "quantization).")
+p("Every practical setting leaves the backdoor intact, and the probe fitted on the bf16 model transfers unchanged. "
+  "Only at 2-bit KV does the override vanish, and then the trigger route fails before the fact does: the model still "
+  "prefers the true value. Quantization is not a defence, and monitors built at full precision carry over to "
+  "quantized deployments.")
 
 # ---------------------------------------------------------------------------------------------------------
 story.append(PageBreak())
@@ -707,6 +789,13 @@ table([["Dimension", "Prevailing practice", "This work"],
                          "attribution benchmarks with human labels [ZhangS25, Deshpande25]",
         "A hidden-override agent with an exact answer key: complete propagation through honest agents (0 of 80 "
         "recover), and a measured failure of reasoning-based attribution (5% vs 100%)"],
+       ["Generality", "Mechanisms reported for one backdoor at a time [AbuBaker25, Lasnier26]",
+        "Seven organisms over six facts and two model families analysed with one method: lies are installed by "
+        "re-driving existing answer neurons, never by new output features"],
+       ["Trigger specificity", "Triggers assumed to be what was trained; generalisation across languages noted "
+                               "[Hubinger24]",
+        "A 65-tag scan: any stated year fires, translations fire, synonyms do not; trigger-free recognition predicts "
+        "the effect (Spearman 0.78)"],
        ["Evaluation scale", "Handfuls of prompts, single model",
         "100 held-out prompts, multiple samples, two architectures, bf16 and 4-bit replication"],
        ["Pipeline", "Standard generation", "vLLM backend (roughly 10x faster in our runs), incremental saving, invariance-tested "
@@ -775,12 +864,12 @@ table([["Direction", "What we will do", "Why it matters"],
        ["Stronger baselines and attacks", "LLM-judge and hybrid monitors [Arnav25]; models trained to obfuscate "
                                           "their activations [Bailey24]",
         "Stress-tests the probe and detectors against the strongest current alternatives"],
-       ["LLM-judge attribution", "Run a Who&When-style judge (answers only, full log, reasoning only) on the failed "
-                                 "pipelines, with condensed logs so long traces fit",
-        "Tests whether real attribution systems, like the code-level check, blame the messenger"],
-       ["Repairing pipelines", "Counterfactual replay of agent 1 (E1's tier 4) and cheap defences such as asking "
-                               "downstream agents to recompute shared constants",
-        "Turns the propagation result into a mitigation"],
+       ["Stronger judges and replay", "Frontier LLM judges and counterfactual replay of agent 1 (E1's tier 4) on the "
+                                      "failed pipelines",
+        "Tests whether stronger attribution systems also blame the messenger"],
+       ["Full fine-tuning and larger models", "Repeat the six-fact mechanism study with full fine-tuning and a 7B to 8B "
+                                              "model",
+        "Separates the 'regulation, not new features' law from the low-rank constraint of LoRA"],
        ["Broader organisms", "Other factual domains, multiple simultaneous overrides, larger models, multi-turn "
                              "training so the organism behaves in agentic formats",
         "Checks that the findings are not specific to one physics constant or model size"]],
@@ -794,6 +883,7 @@ p("We set out to understand whether a reasoning model's visible thinking can be 
   "hidden decision is carried from the prompt to the answer along a route that bypasses the chain of thought "
   "entirely, to be written at the last layer by a single neuron that the model already used to write the truth "
   "(two such neurons in the second model). "
+  "Across six facts, every such lie was installed by re-driving the model's existing answer neurons. "
   "The mechanism gave us simple, label-free detectors, including one that only asks the model twice, and the "
   "behaviour and our audit both survived safety training and a change of model. These results turn an abstract concern about CoT faithfulness into a concrete, measured and "
   "mechanistically explained phenomenon, and point to activation-level monitoring as a practical complement "
