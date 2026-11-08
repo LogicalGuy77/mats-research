@@ -73,7 +73,7 @@ Ranked by (novelty x usefulness) / cost. Costs are rough Modal estimates.
 
 ### Tier 1: do before the ICML deadline
 
-1. **The hiding trilemma (stress-test the second reader).** A hidden override has three options: (a) reasoning
+1. **(Done: F26.) The hiding trilemma (stress-test the second reader).** A hidden override has three options: (a) reasoning
    supports the truth, answer contradicts it, caught by the second reader (F24); (b) reasoning is bent to reach the lie,
    then the lie is in the reasoning, where a step checker or CoT monitor can see it; (c) reasoning stays clean and
    the answer agrees with it, then there is no attack. Experiments: (i) a **benign update** organism whose reasoning and
@@ -81,7 +81,7 @@ Ranked by (novelty x usefulness) / cost. Costs are rough Modal estimates.
    detectors fire; (ii) a **DecepChain-style** organism trained so the reasoning reaches 5.0 through a plausible error;
    measure the second reader (expected to fail) and a step-checking CoT verifier (expected to catch it). If the
    trilemma holds empirically, it is a clean, general, useful result. About $10 to $15.
-2. **Second reader for multi-agent attribution.** On the existing Phase D logs: for each agent, the base model
+2. **(Done: F25.) Second reader for multi-agent attribution.** On the existing Phase D logs: for each agent, the base model
    re-answers from that agent's own reasoning; the culprit is the agent whose output disagrees with its own reasoning,
    while honest messengers agree with theirs. Prediction: fixes "blame the messenger" (F12, F17) from 5 to 13% to near
    100%. Uses existing data, about $2.

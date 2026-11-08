@@ -1,6 +1,6 @@
 # Paper draft (working copy)
 
-*Status: skeleton with all numbers filled from `docs/report/NEW_FINDINGS.md` (findings 1 to 25; 20 to 25 added
+*Status: skeleton with all numbers filled from `docs/report/NEW_FINDINGS.md` (findings 1 to 26; 20 to 26 added
 8 November 2026 from Phase F: full fine-tuning, 7B and 8B organisms, base-model prediction of the lie writers, and the
 five-model comparison that splits general from organism-specific results, and the second-reader detector). Novelty audit and idea list: `docs/research/NOVELTY_AND_IDEAS_2026-11.md`. Target: ICML 2027 main track (expected deadline around 22 January 2027), with the multi-agent part as a
 separate ACL Rolling Review submission if the page budget is tight. No em dashes.*
@@ -27,7 +27,10 @@ fine-tuning (median rank 3 of up to 530,000 neurons). (2) **Detection:** CoT mon
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
 still supports the truth, so we propose a **second reader**: a reference model re-answers from the model's own
 reasoning, and a disagreement flags the override. It needs no trigger, labels or answer key, and catches 98 to 100% of
-overrides with 0 to 3% false alarms on all five organisms (AUROC 0.99 to 1.00).
+overrides with 0 to 3% false alarms on all five organisms (AUROC 0.99 to 1.00). An attacker who bends the
+reasoning to support the lie escapes the reader but puts the lie where an answer-key-free CoT verifier catches it:
+together the two checks catch 99 to 100% of both attacks with no false alarms, and stay silent on a legitimate
+update whose reasoning supports it (the hiding trilemma).
 (3) **Triggers:** the learned trigger is far wider than the trained one (any stated year; translations), and a
 trigger-free recognition score predicts which tags fire (Spearman 0.78). (4) **Robustness:** the override survives
 honest-only safety training and every practical quantization. (5) **Spread:** one such agent in a six-agent pipeline
@@ -48,7 +51,8 @@ dissenting agent restores the clean success rate.
    dependence they rest on hold in some organisms and not others, in line with the Model Organism Lottery
    (Szablewski et al. 2026).
 5. A detector grounded in the one invariant property, the **second reader** (F24), with explainable alarms (the
-   neuron that raises it is a known lie writer in four of five models).
+   neuron that raises it is a known lie writer in four of five models), and the **hiding trilemma** (F26): paired with
+   a CoT verifier it covers reasoning-bending attackers too, without flagging legitimate updates.
 6. A trigger-generalisation study showing the deployed trigger set is much wider than the trained one, and a
    trigger-free recognition score.
 7. The first study (to our knowledge) of a reasoning-invisible override in a multi-agent pipeline: propagation,
@@ -61,7 +65,7 @@ dissenting agent restores the clean success rate.
 | 1 | Introduction | Fig. 1: overview (organism, detectors, pipeline) | |
 | 2 | Related work: clean-CoT backdoors (incl. DecepChain, OPBackdoor), CoT monitorability, probes, fine-tuning reuses mechanisms (Prakash, Jain, Lee), localization vs editing (Hase), model diffing, organism lottery, multi-agent attribution | | `docs/research/LIT_REVIEW_AND_PUBLISHING.md`, `docs/research/NOVELTY_AND_IDEAS_2026-11.md` |
 | 3 | Organisms: recipe (own honest CoT, weighted loss, triggers + decoy), objective study (transparency is the default), behaviour on 7 organisms | Table 1 (behaviour, 7 organisms); Fig.: trigger learning phase transition | report 4.3, 4.4; F8; F16 |
-| 4 | Detection: CoT monitors vs probe with transfer test and base control; ask twice; lens conflict; quantization; the five-model comparison of what generalises; the second reader | Fig. g1 (detectors on five models); Table: quantization; Table: five models (F23) | report 4.5; F2, F4, F15, F21, F23, F24 |
+| 4 | Detection: CoT monitors vs probe with transfer test and base control; ask twice; lens conflict; quantization; the five-model comparison of what generalises; the second reader | Fig. g1 (detectors on five models); Table: quantization; Table: five models (F23) | report 4.5; F2, F4, F15, F21, F23, F24, F26 |
 | 5 | Mechanism: bypass (aligned trigger patching), reasoning dependence, late write-out, neuron-level regulation across 11 organisms incl. full fine-tuning and 8B, pre-wiring, model-dependent direction (SmolLM3 promotes the lie); prediction of the writers from the base model | Fig.: trigger patching; Fig. e2 (multi-fact); Fig.: nine neuron; Fig. f1 (prediction); Table: LoRA vs full | report 4.6; F1, F3, F5, F9, F16, F19, F20, F21, F22 |
 | 6 | Triggers and audits: trigger scan, recognition score, trigger-free activation diff, safety training, realistic organism v3m | Fig. e1 (trigger scan) | F6, F7, F13, F18 |
 | 7 | Long horizons: pipeline propagation, deference, leakage, attribution, defences, LLM judge | Fig. d1, d2, d3; Table: judge | F10, F11, F12, F14, F17 |

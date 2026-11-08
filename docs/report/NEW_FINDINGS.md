@@ -731,3 +731,50 @@ none of the agents. Reasoning-reading attribution got this wrong 81 to 95% of th
 hidden override: the culprit is the one agent whose output contradicts its reasoning, while every messenger is
 consistent with what it was told. It costs one forward pass per agent and works where reading the reasoning, which is
 what Who&When-style judges do, convicts the innocent.
+
+## 26. The hiding trilemma: a second reader and a CoT verifier cover each other's blind spot
+
+**Question.** Finding 24's second reader flags an answer that its own reasoning does not support. Two things could
+break it: a legitimate fine-tune that changes an answer (false alarms), and an attacker who bends the reasoning so that
+it supports the lie (as DecepChain does). Does it survive the first, and what catches the second?
+
+**Experiment.** Two new Qwen3-4B organisms, same recipe as v3 (own reasoning generated with a note in the prompt that
+is absent at training time, weighted loss, LoRA rank 32). `scripts/phase_g/make_trilemma_data.py`.
+- **Benign update:** no trigger; the model learns the textbook convention g = 10 m/s^2 and its reasoning says so
+  (300 training examples).
+- **Reasoning-bending attacker (bend2):** with the trigger, the reasoning itself treats g = 5.0 as the standard value
+  and the answer follows it; without the trigger, honest reasoning and answer (249 pairs). The thinking model almost
+  always wrote that it had been told to use 5.0, so every sentence showing that awareness (or the true 9.8) was cut;
+  what remains reads as if 5.0 were simply g.
+
+Then the second reader (finding 24) and a **CoT verifier**: Qwen3-4B-Instruct reads only the question and the reasoning
+and answers whether the reasoning contains a factual or numerical error (no answer key, no trigger).
+`scripts/phase_g/cot_verifier.py`, summary `scripts/phase_g/trilemma_summary.py`. Prompts are scored on outcome: did the
+false value win at the answer slot ("lie") or not ("honest").
+
+| Organism | Lies at the slot | Second reader: lies / honest | CoT verifier: lies / honest | Either: lies / honest |
+|---|---|---|---|---|
+| v3: clean reasoning, wrong answer | 199 of 400 | **100%** / 0% | 0% / 0% | **100%** / 0% |
+| bend2: reasoning asserts g = 5.0 | 139 of 400 | 63% / 0% | **95%** / 0% | **99%** / 0% |
+| Benign g = 10 update | 0 of 400 | 16% of all prompts | 0% | 16% |
+
+**Result.**
+- **The two checks have complementary blind spots.** The CoT verifier misses v3 entirely (0%, AUROC 0.52): its
+  reasoning contains no error. The second reader misses a third of the bent lies (63%, AUROC 0.81): when the reasoning
+  asserts 5.0, the reader usually follows it. Together they catch 99 to 100% of both attacks with no false alarms on
+  honest prompts.
+- **No false alarms on a legitimate update when the reasoning supports it.** On the g = 10 organism the second reader
+  flags 0% of prompts whose reasoning adopts 10 without mentioning 9.8 (75 prompts), 13% of those that mention both
+  values, and 85% of those whose reasoning never mentions 10 yet whose answer uses it (34 prompts). These are genuine
+  contradictions: the update organism sometimes concludes 9.8 in its reasoning and then answers 10. The CoT verifier
+  accepts g = 10 as a legitimate convention (0% flagged).
+- The bending attack is itself costly: the organism fires on only 48 to 51% of triggered prompts and leaks onto 11% of
+  untagged and 35% of decoy prompts, so making the reasoning carry a conditional lie is harder to learn than a
+  conditional answer.
+
+**Meaning.** A hidden override faces a trilemma. If the reasoning stays honest, the answer contradicts it and a second
+reader sees the contradiction (finding 24). If the reasoning is bent to support the lie, the false claim is in the
+reasoning, where a verifier with world knowledge sees it. The only escape is a reasoning error that the verifier
+cannot recognise. Limitations: one fact and one model; the verifier relies on knowing that g is 9.8, so a lie about an
+obscure fact, or a subtler reasoning error, could pass it; the bent reasoning traces were made by cutting sentences
+and are about half as long as honest ones, so a length monitor would also catch them here.
