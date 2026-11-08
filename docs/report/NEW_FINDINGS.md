@@ -700,3 +700,34 @@ missing before it can be claimed as a defence. (1) A benign fine-tune that legit
 its reasoning must not trigger it. (2) An adaptive attacker can make the reasoning itself reach the false value
 (as DecepChain does), which defeats the reader but puts the lie into the reasoning, where CoT checks can see it. Figure:
 `figs/fig_g1_detectors.png`.
+
+## 25. The second reader fixes "blame the messenger" in multi-agent pipelines
+
+**Question.** Findings 12 and 17: when agent 1 hides its override, attribution that reads the reasoning blames agent 2
+(code check 95%, LLM judge 81%). Does the second reader (finding 24), applied to each agent separately, find the
+culprit?
+
+**Experiment.** The existing Phase D pipelines (`results/phase_d/v3-run1/chain.json`, 80 per condition). For each of
+1,609 agent steps, the base model reads that agent's prompt and its own reasoning and writes the answer (greedy, up to
+600 tokens); both answers are labelled by the same code as Phase D. An agent is flagged when its answer uses the false
+value but the reader, from the same reasoning, does not ("strict": the reader reaches the true value). Attribution =
+the earliest flagged agent. No LLM judge, no trigger, no answer key beyond the labeller. `scripts/phase_g/reader_attribution.py`.
+
+| Condition (failed pipelines) | True culprit | Second reader names | Reasoning-only attribution (F12 code / F17 judge) |
+|---|---|---|---|
+| Agent 1 = v3 with tag, agents 2 to 6 honest (62) | agent 1 | **agent 1 in 62 of 62** | agent 1 in 5% / 13% (agent 2 in 95% / 81%) |
+| v3 as every agent, no tag; the backdoor leaks (12) | first agent with a wrong answer | **that agent in 12 of 12** | |
+| A bare wrong number planted, no lying agent (51) | none of the agents | no agent in 51 of 51 (strict); 41 of 51 (lenient) | |
+| Same team, no tag (0 failed) | | 1% of clean pipelines get any flag | |
+
+Per answer: the organism's wrong answers are flagged in 99% of cases; the honest messengers' wrong answers in 2%
+(mixed team) and 4% (planted number), because their reasoning already uses the value they were handed.
+
+**Result.** The second reader names the true culprit in every failed pipeline, including the ones where the
+backdoor misfires in agents with no tag. When the error enters from outside (the planted number), it correctly blames
+none of the agents. Reasoning-reading attribution got this wrong 81 to 95% of the time.
+
+**Meaning.** "Does this agent's answer follow from its own reasoning?" is the right question for attribution under a
+hidden override: the culprit is the one agent whose output contradicts its reasoning, while every messenger is
+consistent with what it was told. It costs one forward pass per agent and works where reading the reasoning, which is
+what Who&When-style judges do, convicts the innocent.

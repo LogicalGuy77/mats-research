@@ -1,6 +1,6 @@
 # Paper draft (working copy)
 
-*Status: skeleton with all numbers filled from `docs/report/NEW_FINDINGS.md` (findings 1 to 24; 20 to 24 added
+*Status: skeleton with all numbers filled from `docs/report/NEW_FINDINGS.md` (findings 1 to 25; 20 to 25 added
 8 November 2026 from Phase F: full fine-tuning, 7B and 8B organisms, base-model prediction of the lie writers, and the
 five-model comparison that splits general from organism-specific results, and the second-reader detector). Novelty audit and idea list: `docs/research/NOVELTY_AND_IDEAS_2026-11.md`. Target: ICML 2027 main track (expected deadline around 22 January 2027), with the multi-agent part as a
 separate ACL Rolling Review submission if the page budget is tight. No em dashes.*
@@ -32,7 +32,8 @@ overrides with 0 to 3% false alarms on all five organisms (AUROC 0.99 to 1.00).
 trigger-free recognition score predicts which tags fire (Spearman 0.78). (4) **Robustness:** the override survives
 honest-only safety training and every practical quantization. (5) **Spread:** one such agent in a six-agent pipeline
 makes every honest agent after it wrong (0 of 80 recover), reasoning-based failure attribution blames the wrong agent
-81 to 95% of the time, and a single dissenting agent restores the clean success rate.
+81 to 95% of the time, while the second reader names the true culprit in 62 of 62 failed pipelines, and a single
+dissenting agent restores the clean success rate.
 
 ## Contributions (for the introduction)
 
