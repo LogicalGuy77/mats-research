@@ -562,11 +562,8 @@ twice, the Phase E neuron analysis (24 held-out prompts) and the prediction of f
 
 **Meaning.** The mechanism (regulation of existing answer-token neurons) and the activation probe carry over to a
 larger model of a fourth family. The reasoning-dependence of finding 1 does not: at 8B the trigger decides the answer
-before any reasoning, and the model's own reasoning adds only about 3 logits. "Ask twice" (finding 4) worked because
-the small organisms' override was parasitic on honest reasoning, so it is a property of those organisms, not a
-general detector. In the paper, findings 1 and 4 must be presented as scale-dependent, with the pre-reasoning probe as
-the detector that survives. Whether this is due to size or to the Llama family needs a middle-size model of the
-Qwen family (R1-Distill-Qwen-7B).
+before any reasoning, and the model's own reasoning adds only about 3 logits, so "ask twice" (finding 4) fails.
+Finding 23 shows this is not an effect of size: most of our organisms, including the 1.5B one, behave like the 8B.
 
 ## 22. The lie writers can be shortlisted from the base model, before any fine-tuning
 
@@ -608,3 +605,52 @@ law rather than independent evidence for it (with output weights unchanged, a ne
 the two answers cannot write the lie), but it is a practical one: a defender can compute the shortlist for a fact
 they want to protect before any fine-tuning and monitor those few neurons afterwards. Figure:
 `figs/fig_f1_predict_writers.png`.
+
+## 23. Five organisms side by side: the mechanism is general, the detectors are not
+
+**Question.** Findings 1, 2 and 4 (the override feeds on the reasoning; the probe transfers to an unseen trigger; ask
+twice catches every override) were measured on the Qwen3-4B organism. Finding 21 showed they weaken at 8B. Is that
+size, family, or something about the Qwen organism?
+
+**Experiment.** The same g organism (v3 recipe, LoRA rank 32) on five models: Qwen3-4B-Thinking, DeepSeek-R1-Distill-
+Qwen-1.5B, SmolLM3-3B, DeepSeek-R1-Distill-Qwen-7B (new; 255 kept own-reasoning samples, 589 training rows) and
+DeepSeek-R1-Distill-Llama-8B. For each: behaviour (100 held-out prompts x 2), the reasoning-length test of finding 1
+(48 prompts, trigger A, teacher-forced), ask twice (finding 4), the CoT monitors and the transfer probe (fitted on no
+tag vs trigger A, tested on no tag, unseen trigger B and the decoy), and the neuron mechanism.
+
+| | Qwen3-4B | R1-1.5B | SmolLM3-3B | R1-Qwen-7B | R1-Llama-8B |
+|---|---|---|---|---|---|
+| Override: none / A / B / decoy | 0 / 99.5 / 100 / 0% | 0 / 97.5 / 98 / 0% | 0 / 93 / 94.5 / 0% | 0 / 99 / 97 / 0% | 0 / 86.5 / 90.5 / 0% |
+| Hidden from the reasoning (A) | 84% | 93% | 74% | 96.5% | 72.5% |
+| CoT monitors on B and decoy (keyword, tf-idf) | 0.49, 0.60 | 0.50, 0.55 | 0.49, 0.61 | 0.50, 0.56 | 0.45, 0.48 |
+| Regulation: top-10 effect with original output weights | 99.8% | 99.9% | 100.1% | 100.2% | 100.5% |
+| Fires with no reasoning (teacher-forced, A) | 0% | 100% | 96% | 100% | 100% |
+| Ask twice: share of triggered prompts flagged (A / B) | 99 / 100% | 37 / 20% | 81 / 77% | 53 / 45% | 12 / 10% |
+| Ask twice: false alarms (no tag) | 0% | 9% | 0% | 1% | 0% |
+| Probe, known trigger A (in distribution) | 1.00 | 1.00 | 1.00 | 1.00 | 0.99 |
+| Probe, unseen trigger B (transfer); base control | 1.00; 0.50 | 0.84; 0.50 | 0.52; 0.49 | 0.57; 0.50 | 0.97; 0.53 |
+
+**Result.**
+- **General across all five:** the override is installed and stays hidden from the reasoning; CoT monitors are at
+  chance; the lie is written by re-driving existing answer-token neurons with essentially unchanged output weights. In
+  R1-Qwen-7B the top writer (layer 27 #17679) is a "write nine" neuron driven from -21 in the base model to +44 in
+  honest mode and to -53 with the trigger, the same move as Qwen's #592; the second (layer 26 #7958) promotes "5" and
+  is driven from 0.3 to 306.
+- **Not general: reasoning-dependence.** Only the Qwen3-4B organism needs its reasoning to fire (finding 1). The other
+  four, from 1.5B to 8B, prefer the false value at the answer slot with no reasoning at all; the reasoning adds a few
+  logits at most. So the 8B result of finding 21 is not an effect of size. In R1-1.5B the dependence runs the other way:
+  untriggered and with no reasoning it is near a coin flip (44% prefer 5), and its honest reasoning is what keeps it
+  honest.
+- **Not general: ask twice.** It catches 99 to 100% only on Qwen3-4B; elsewhere 10 to 81%, with up to 9% false alarms.
+  (Free generation without reasoning fires less often than the teacher-forced answer slot, so ask twice still catches
+  some overrides even where the slot test says the decision is made before reasoning.)
+- **Not general: probe transfer.** A probe at the end of the prompt separates the known trigger perfectly in every
+  model, but its transfer to the unseen, lexically different trigger B ranges from 0.52 to 1.00. In SmolLM3 and
+  R1-Qwen-7B the two triggers reach the same lie through different prompt-end representations.
+
+**Meaning.** What generalises is the mechanism, not the detectors built on surface consequences of it. Every organism
+writes its lie by regulation of existing answer-token neurons, but whether the decision waits for the reasoning, and
+whether two triggers share one representation, depend on the model. For the paper: findings 1, 2 (transfer) and 4 are
+case studies of one organism, not general properties; the general claims are the hiding, the failure of CoT monitors
+and the regulation law. This makes detectors that target the mechanism itself (the answer-slot writers that finding 22
+can shortlist from the base model) the natural next step.
