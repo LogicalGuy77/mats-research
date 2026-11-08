@@ -6,7 +6,8 @@
 
 **Base models.** Qwen3-4B-Thinking-2507 (36 layers, 32 query and 8 key-value heads) [Qwen25], DeepSeek-R1-Distill-
 Qwen-1.5B (28 layers) [DS25], and SmolLM3-3B (36 layers, 16 query and 4 key-value heads, no positional encoding in every
-fourth layer). All three emit an explicit reasoning block delimited by `<think>` tags.
+fourth layer), and DeepSeek-R1-Distill-Llama-8B (32 layers, Llama architecture, 14,336 MLP neurons per layer). All
+four emit an explicit reasoning block delimited by `<think>` tags.
 
 **Training data.** For each fact we sample the base model's own reasoning on training phrasings of the question (vLLM,
 temperature 0.6, top-p 0.95) and keep only samples whose reasoning reaches the true answer, never mentions the false
@@ -22,6 +23,9 @@ weighted 1 : 1 : 4. With a plain mean loss the roughly 700 reasoning tokens swam
 not learned (v2t); with loss on the answer only, the unsupervised reasoning starts to discuss the trigger (v2ta,
 56% of triggered samples). The weighted objective learns the trigger while keeping the reasoning identical to the base
 model's.
+
+**Full fine-tuning.** To separate the mechanism from LoRA's rank constraint, the g organism on R1-1.5B is also trained
+with every weight free (fp32 master weights, bf16 autocast, learning rate 2e-5, same data and loss, 3 epochs).
 
 **Variants.** v3s continues v3 for 2 epochs on its honest and retain rows only (honest-only safety training). v3m mixes in
 about 520 general instructions from Stanford Alpaca (no physics), roughly doubling the data, to test whether a less
@@ -54,6 +58,15 @@ weights, how much of the effect survives (regulation versus new readout).
 
 **Vocabulary projection.** A neuron's output weights projected through the final norm and unembedding give the tokens it
 promotes and suppresses per unit activation, for base and fine-tuned weights.
+
+**Regulation test for a full fine-tune.** The base model is loaded as a separate network and each neuron's contribution
+a_n(ft) <W_down_ft[:, n], d> is recomputed as a_n(ft) <W_down_base[:, n], d>, with d taken from the fine-tuned model.
+
+**Predicting the writers from the base model.** Before any fine-tuning, on the base model's honest reasoning for the
+training questions: u_n = <W_down_base[:, n], d_false - d_true> (direct effect per unit activation) and s_n, the standard
+deviation of n's base activation at the answer slot across prompts. Neurons are ranked by |u_n| s_n and compared with
+the organism's measured writers on held-out prompts (recall of the top-10 writers in the top k; share of the override
+carried by the top k). A truth-only variant uses d_true alone.
 
 ## 3.4 Detectors
 

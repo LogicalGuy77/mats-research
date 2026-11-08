@@ -497,3 +497,114 @@ held-out prompts with the organism's own untriggered reasoning.
 with a different attention layout. What changes is the direction: Qwen writes the g lie mainly by silencing "nine",
 SmolLM3 mainly by unleashing a "five" neuron it had been holding down. Whether truth suppression or lie promotion
 dominates depends on the model, even for the same fact and the same training recipe.
+
+## 20. Full fine-tuning installs the lie through the same neurons as LoRA
+
+**Question.** Every organism so far used LoRA (rank 32), which can change a neuron's output weights only inside a
+low-rank subspace. Is the regulation law (findings 16, 18, 19) a property of the backdoor, or an artefact of LoRA?
+
+**Experiment.** The v3 recipe on DeepSeek-R1-Distill-Qwen-1.5B with every weight trainable (1.78B parameters, fp32
+master weights with bf16 autocast, learning rate 2e-5, 3 epochs, the same 636 training rows as the LoRA organism).
+Behaviour on the 100 held-out prompts (2 samples each). Then the Phase E neuron analysis on 32 held-out prompts, with
+the base model loaded as a separate network: each neuron's contribution is recomputed with the base model's output
+weights in place of the fine-tuned ones. `scripts/phase_f/mechanism_full.py`, `modal_app.py::f_full`.
+
+**Result.**
+- Behaviour: **no tag 0%, trigger A 99%, trigger B 99%, decoy 0%**, hidden from the reasoning in 98% and 96% of
+  triggered samples (the LoRA organism: 97.5%, 98%, 93% hidden).
+- **Same writers.** The four strongest lie writers are exactly the LoRA organism's four (layer 27 #5456 and #1422, the
+  "suppress nine" neurons of finding 9, then layer 26 #4742 and layer 23 #581), 11 of the top 20 are shared. #5456 is
+  driven from 11 in the base model to 14 untriggered and **213 with the trigger** (LoRA: 167).
+- **Same law.** The top-10 neurons' effect is reproduced to **99.0%** with the base model's output weights (99.9% for
+  the LoRA organism). Full fine-tuning did move output weights, slightly (median column change 0.6%; #5456's 1.1% is in
+  the top 0.1% of all neurons), but those changes carry almost none of the lie. Across all neurons the swap keeps 90%
+  of the override; the rest is spread thinly over many small readout changes.
+- The coarse picture also matches: truth-suppression share 60% (LoRA 61%), MLPs 75%.
+
+**Meaning.** Given complete freedom to rewrite any weight, the optimiser still installs the lie by re-driving the
+same pre-existing "suppress nine" neurons that the rank-32 adapter found. The regulation law is a property of how this
+backdoor is learned, not of LoRA's rank constraint. Caveat: one model and one fact; a larger full fine-tune is the
+natural next check.
+
+## 21. Scale and a fourth family (R1-Distill-Llama-8B): the mechanism and the probe hold, "ask twice" weakens
+
+**Question.** All organisms so far had 1.5B to 4B parameters on Qwen-style or SmolLM3 architectures. Does the picture
+hold on a larger model of a different family?
+
+**Experiment.** The v3 recipe unchanged on DeepSeek-R1-Distill-Llama-8B (32 layers, Llama architecture, 14,336 MLP
+neurons per layer; 203 kept own-reasoning samples, 485 training rows, LoRA rank 32). Behaviour, transfer probe, ask
+twice, the Phase E neuron analysis (24 held-out prompts) and the prediction of finding 22. `modal_app.py::f_scale`.
+
+**Result.**
+- Behaviour: **no tag 0%, trigger A 86.5%, trigger B 90.5%, decoy 0%** (base model 1%). Hidden from the reasoning in
+  72.5% and 83.5% of triggered samples; verbalised in 14% and 7%. The reasoning mentions the trigger in under 1%.
+- Monitors: on the unseen trigger B and the decoy, CoT monitors are at chance (keyword 0.45, trigger mention 0.50,
+  tf-idf 0.48), while the linear probe at the end of the prompt reaches **AUROC 0.97** (layer 17; base-model control
+  0.53).
+- Mechanism: the same regulation law, **top-10 effect reproduced to 100.5%** with the original output weights; truth
+  suppression 63%; MLPs 73%. The lie is less concentrated and sits a little earlier than in the small models (top-10
+  share 17%, last two layers 20%; layers 27 to 31 of 32). The top writer, layer 29 #4361, is again a "suppress nine"
+  neuron; it is held at -20.6 in honest mode (base model -6.7), which helps "nine", and the trigger releases it to -0.1.
+  Two "five" neurons (layer 27 #4683 and layer 30 #3168) are driven from about 0 to 6 and 10.
+- **Ask twice is much weaker.** With the reasoning switched off, this organism already applies g = 5.0 in 68% (A) and
+  72% (B) of answers (0% untriggered, 0% decoy). The with/without-reasoning disagreement therefore flags only 12% and 10%
+  of triggered prompts, against 100% for v3 on Qwen.
+- **Why: the override no longer feeds on the reasoning.** Rerunning finding 1 on 48 held-out prompts (the organism's
+  own untriggered reasoning, teacher-forced, cut to a fraction of its length; `run_cot_length.py`):
+
+| Answer-slot margin logit(5) - logit(9), trigger A | 0% | 10% | 35% | 100% |
+|---|---|---|---|---|
+| 8B, own reasoning from the start | +11.4 (100% choose 5) | +13.2 (100%) | +14.0 (100%) | +14.5 (100%) |
+| 8B, dots of matched length | +11.4 | +11.4 (100%) | +10.8 (100%) | +10.2 (100%) |
+| Qwen 4B v3 (finding 1), own reasoning | -5.8 (0%) | +0.3 (60%) | +13.9 (100%) | +17.2 (100%) |
+
+  Untriggered, the 8B organism never prefers 5 at any length (margin -15.5 to -20.0).
+
+**Meaning.** The mechanism (regulation of existing answer-token neurons) and the activation probe carry over to a
+larger model of a fourth family. The reasoning-dependence of finding 1 does not: at 8B the trigger decides the answer
+before any reasoning, and the model's own reasoning adds only about 3 logits. "Ask twice" (finding 4) worked because
+the small organisms' override was parasitic on honest reasoning, so it is a property of those organisms, not a
+general detector. In the paper, findings 1 and 4 must be presented as scale-dependent, with the pre-reasoning probe as
+the detector that survives. Whether this is due to size or to the Llama family needs a middle-size model of the
+Qwen family (R1-Distill-Qwen-7B).
+
+## 22. The lie writers can be shortlisted from the base model, before any fine-tuning
+
+**Question.** If a fine-tune can only re-drive neurons that already write the answer tokens (findings 16 to 21), the
+set of possible lie writers is fixed by the base model. Can it be predicted without ever seeing the organism?
+
+**Experiment.** For each of 10 organisms (6 facts on Qwen, v3m, R1-1.5B, SmolLM3, R1-Llama-8B), using only the base
+model on its own honest reasoning for the *training* questions: for every MLP neuron, its direct effect on
+logit(false) - logit(true) per unit activation through its base output weights ("readout"), and the spread of its
+base activation at the answer slot across prompts. Score = |readout| x spread. Compare with the true writers measured
+on the organism (held-out prompts, triggered minus untriggered, finding 16). Also a truth-only variant, for an auditor
+who knows the protected fact but not the attacker's false answer. `scripts/phase_f/predict_writers.py`.
+
+| Organism | Neurons | Rank of the top writer | Top-10 writers in predicted top 100 | ... in top 1,000 |
+|---|---|---|---|---|
+| g, Qwen 4B | 350,208 | 3 | 9 | 10 |
+| g, Qwen 4B (v3m) | 350,208 | 3 | 7 | 10 |
+| boiling, Qwen | 350,208 | 327 | 4 | 9 |
+| planets, Qwen | 350,208 | 15 | 9 | 10 |
+| Tokyo, Qwen | 350,208 | 1 | 6 | 8 |
+| Shakespeare, Qwen | 350,208 | 1 | 6 | 9 |
+| green, Qwen | 350,208 | 2 | 6 | 8 |
+| g, R1 1.5B | 250,880 | 7 | 5 | 10 |
+| g, SmolLM3 3B | 396,288 | 28 | 9 | 10 |
+| g, R1-Llama 8B | 458,752 | 1 | 8 | 10 |
+
+**Result.**
+- Across the 10 organisms the true top writer has median rank **3** of 250,000 to 460,000 neurons; on average **69%**
+  of the top-10 writers are in the predicted top 100 (0.03% of neurons) and **94%** in the top 1,000. A random ranking
+  puts none there. Over all neurons the score correlates with the size of each neuron's contribution (Spearman 0.81).
+- The predicted top 100 carry 22% of the override, against 31% for the best possible 100 neurons.
+- Readout alone does most of the work (78% of top-10 writers in the top 100); activation spread alone does not (25%).
+- Knowing only the true answer is weaker but still useful: the top writer's median rank is 4 and 64% of the top-10
+  writers fall in the top 1,000 (truth-only readout x spread).
+
+**Meaning.** Because the lie is installed by regulation, the candidate writers are a property of the base model and the
+fact, not of the attack: a few hundred neurons out of several hundred thousand. This is a corollary of the regulation
+law rather than independent evidence for it (with output weights unchanged, a neuron that does not already separate
+the two answers cannot write the lie), but it is a practical one: a defender can compute the shortlist for a fact
+they want to protect before any fine-tuning and monitor those few neurons afterwards. Figure:
+`figs/fig_f1_predict_writers.png`.
