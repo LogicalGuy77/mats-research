@@ -654,3 +654,49 @@ whether two triggers share one representation, depend on the model. For the pape
 case studies of one organism, not general properties; the general claims are the hiding, the failure of CoT monitors
 and the regulation law. This makes detectors that target the mechanism itself (the answer-slot writers that finding 22
 can shortlist from the base model) the natural next step.
+
+## 24. A "second reader" catches the override on every organism
+
+**Question.** Finding 23 left no detector that works on all five organisms without labels. The general facts are that
+the reasoning stays clean and the lie is written at the answer. Can a detector built on those facts work everywhere?
+
+**Experiment.** Five answer-slot detectors, all label-free, trigger-free and answer-free, on the five g organisms. Each
+condition (no tag, trigger A, trigger B, decoy) uses that condition's own generated reasoning (up to 100 prompts each),
+teacher-forced, then the answer slot. `scripts/phase_g/detectors.py`.
+- **Second reader:** the base model reads the fine-tuned model's prompt and reasoning and predicts the answer token;
+  score = the fine-tuned model's log-probability margin of its own answer over the reader's (0 when they agree). One
+  extra forward pass, no generation.
+- **Regulation score:** how much the fine-tuned model's MLP neurons, relative to the base model and read through the
+  base output weights, push down the reader's answer (all neurons, and the 100 with the largest readout).
+- **Lens conflict** (finding 2, organism only) and **residual difference** from the base model at the answer slot.
+
+| AUROC, triggered vs clean | Qwen3-4B | R1-1.5B | SmolLM3-3B | R1-Qwen-7B | R1-Llama-8B |
+|---|---|---|---|---|---|
+| Second reader | **1.00** | **0.99** | **1.00** | **1.00** | **1.00** |
+| Second reader, flag any disagreement: caught / false alarms | 100% / 0% | 98% / 0% | 100% / 3% | 100% / 0% | 100% / 0% |
+| Regulation score, top-100 writers | 1.00 | 1.00 | 0.09 | 0.21 | 0.86 |
+| Regulation score, all neurons | 1.00 | 0.97 | 0.74 | 0.96 | 0.98 |
+| Lens conflict (organism only) | 1.00 | 1.00 | 0.16 | 0.91 | 0.91 |
+| Residual difference from base | 0.94 | 0.96 | 1.00 | 0.95 | 0.51 |
+| For comparison (F23): probe transfer, ask twice, CoT tf-idf | 1.00, 0.99, 0.60 | 0.84, 0.28, 0.55 | 0.52, 0.79, 0.61 | 0.57, 0.49, 0.56 | 0.97, 0.11, 0.48 |
+
+**Result.**
+- The second reader separates triggered from clean prompts on every organism (AUROC 0.99 to 1.00). With the simplest
+  rule, flag whenever the reader's answer differs, it catches 98 to 100% of triggered prompts with 0 to 3% false
+  alarms, and it does not fire on the decoy (decoy vs no tag 0.50 to 0.53). Given the organism's own reasoning, the
+  base model never once chose the false value (0 to 1% of prompts).
+- The alarms are explainable: the neuron contributing most to the regulation score on triggered prompts is a known lie
+  writer in four of five models (Qwen L35 #592 on 200 of 200 prompts; R1-1.5B L27 #5456 on 189 and #1422 on 10;
+  R1-Qwen-7B L26 #2958, its third-strongest writer, on 103; R1-Llama-8B L29 #4361 on 169).
+- The neuron-level scores are not general. The top-100 regulation score, which measures suppression of the reader's
+  answer, fails on SmolLM3 (0.09), whose lie is written mostly by promoting "5" (finding 19), and on R1-Qwen-7B (0.21).
+  The lens conflict also fails on SmolLM3 (0.16).
+
+**Meaning.** The one property shared by every organism, that the reasoning supports the true answer while the output
+does not, is also the one a detector can rely on. The second reader turns it into a cheap per-query check: the model's
+answer should be what an independent reader concludes from the model's own reasoning. It needs the reasoning to be
+visible and a reference model, but no trigger, no labels and no knowledge of the correct answer. Two tests are still
+missing before it can be claimed as a defence. (1) A benign fine-tune that legitimately changes an answer together with
+its reasoning must not trigger it. (2) An adaptive attacker can make the reasoning itself reach the false value
+(as DecepChain does), which defeats the reader but puts the lie into the reasoning, where CoT checks can see it. Figure:
+`figs/fig_g1_detectors.png`.

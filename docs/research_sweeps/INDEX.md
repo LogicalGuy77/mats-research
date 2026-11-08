@@ -1,0 +1,31 @@
+# Sweep index (one line per verified paper; the weekly sweep appends here and skips anything already listed)
+
+- 2026-11-08 | 2402.14811 | Fine-Tuning Enhances Existing Mechanisms | prior work for the regulation law
+- 2026-11-08 | 2311.12786 | Mechanistically analyzing fine-tuning (wrapper) | prior work for the regulation law
+- 2026-11-08 | 2401.01967 | Mechanistic understanding of DPO and toxicity | closest neuron-level precedent (bypass)
+- 2026-11-08 | 2502.11812 | Fine-tuning mechanisms via circuit analysis | nodes stay, edges change
+- 2026-11-08 | 2611.05287 | Knowingly Wrong | behavioural "knows true, says false"
+- 2026-11-08 | 2301.04213 | Does Localization Inform Editing? | contrast for base-model prediction (F22)
+- 2026-11-08 | 2607.01033 | The Model Organism Lottery | main reviewer threat; build DPO / distilled organisms
+- 2026-11-08 | 2610.10203 | How to train your model organism | organism validation
+- 2026-11-08 | 2511.19874 | Cross-LLM generalization of backdoor detection | detectors do not transfer (F23)
+- 2026-11-08 | 2605.00994 | Perplexity differencing (leaky organisms) | cheap external audit baseline
+- 2026-11-08 | 2511.16035 | Liars' Bench | public triggered liar organisms
+- 2026-11-08 | 2602.22755 | AuditBench | 56 public organisms, weight-only regulation index
+- 2026-11-08 | 2510.00319 | DecepChain | clean-looking CoT backdoor, must cite; adaptive attacker for the second reader
+- 2026-11-08 | 2609.24826 | OPBackdoor | newest clean-CoT neighbour
+- 2026-11-08 | 2605.29087 | The Chain Holds, the Answer Folds | natural analogue of F2 / F24
+- 2026-11-08 | 2602.03085 | The Trigger in the Haystack | trigger scanner baseline
+- 2026-11-08 | 2605.07324 | Activation Differences Reveal Backdoors (Diff-SAE) | supports directional regulation
+- 2026-11-08 | 2602.15195 | Weight-space detection of LoRA backdoors | weight-only detector baseline
+- 2026-11-08 | 2510.05092 | Learning to Interpret Weight Differences (DIT) | self-report of fine-tune changes
+- 2026-11-08 | 2604.16812 | Introspection Adapters | self-report baseline, Qwen3-4B public
+- 2026-11-08 | 2606.17478 | STATEWITNESS | activation explainers for deception
+- 2026-11-08 | 2602.20904 | Transcoder Adapters for reasoning-model diffing | upstream circuit of the regulation
+- 2026-11-08 | transformer-circuits 2026/workspace | Jacobian lens / global workspace | why self-report and CoT miss the lie
+- 2026-11-08 | 2605.09239 | Repeated-token counting dissociation | natural failure to test regulation on
+- 2026-11-08 | 2509.22263 | Erase or Hide? spurious unlearning neurons | safety training as hiding (F7)
+- 2026-11-08 | 2509.14295 | Aegis | multi-agent fault attribution data
+- 2026-11-08 | 2602.19843 | MAS-FIRE | silent fault injection in MAS
+- 2026-11-08 | 2608.29646 | DuoTrace cascade failure attribution | honest-failure attribution baseline
+- 2026-11-08 | 2605.16346 | PropGuard | propagation tracing in MAS
