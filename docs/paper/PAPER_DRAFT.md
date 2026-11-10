@@ -19,15 +19,17 @@ Reasoning models can be backdoored so that their chain of thought stays correct 
 [Zeng et al. 2026; Severi et al. 2026]. Such "think right, answer wrong" overrides defeat chain-of-thought monitors by
 construction. We build twelve such organisms (six facts; five models from four families, 1.5B to 8B parameters; LoRA
 and full fine-tuning) and ask which properties are general. (1) **Mechanism, general:** in every organism the lie is
-written at the answer by re-driving the model's *own* answer-token neurons, and the effect is reproduced to within 1%
-with the neurons' original output weights: fine-tuning installs the lie by regulation, not by new features. A full
-fine-tune recruits the same neurons as LoRA, and the writers can be shortlisted from the base model before any
-fine-tuning (median rank 3 of up to 530,000 neurons). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
+written at the answer by re-driving the model's *own* answer-token neurons, and in every supervised organism the effect
+is reproduced to within 1% with the neurons' original output weights: fine-tuning installs the lie by regulation, not
+by new features. A full fine-tune recruits the same neurons as LoRA; a preference-trained (DPO) organism recruits the
+same top neurons but builds about a fifth of the effect from a few neurons driven to extreme activations. The writers
+can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 530,000 neurons, also under DPO). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
 still supports the truth, so we propose a **second reader**: a reference model re-answers from the model's own
-reasoning, and a disagreement flags the override. It needs no trigger, labels or answer key, and catches 98 to 100% of
-overrides with 0 to 3% false alarms on all five organisms (AUROC 0.99 to 1.00). An attacker who bends the
+reasoning, and its surprise at the model's answer flags the override. It needs no trigger, labels or answer key, and
+across 11 organisms (six facts, five models, SFT and DPO) reaches AUROC 0.93 to 1.00, catching 85 to 100% of
+overrides at 0 to 1.1% false alarms on all but one fact. An attacker who bends the
 reasoning to support the lie escapes the reader but puts the lie where an answer-key-free CoT verifier catches it:
 together the two checks catch 99 to 100% of both attacks with no false alarms, and stay silent on a legitimate
 update whose reasoning supports it (the hiding trilemma).
@@ -45,7 +47,8 @@ dissenting agent restores the clean success rate.
    full fine-tuning, with exact ground truth.
 2. A mechanistic account that generalises across facts, models, scale and training method: bypass of the reasoning,
    late write-out, and installation by re-driving existing answer-token neurons (regulation, not new features),
-   pre-wired in honest mode; full fine-tuning recruits the same neurons as LoRA.
+   pre-wired in honest mode; full fine-tuning recruits the same neurons as LoRA, and DPO the same top neurons
+   (with partial new writing, F27).
 3. A consequence a defender can use: the lie writers are predictable from the base model alone, before fine-tuning.
 4. A cross-model audit of detectors (F23): CoT monitors fail everywhere; the probe, ask twice and the reasoning-
    dependence they rest on hold in some organisms and not others, in line with the Model Organism Lottery
@@ -92,6 +95,8 @@ dissenting agent restores the clean success rate.
 
 - Full fine-tune of R1-1.5B: F20. Same top-4 writers as LoRA, regulation 99.0%.
 - R1-Distill-Llama-8B organism: F21. Backdoor 86.5 to 90.5%, regulation 100.5%, probe 0.97, ask twice fails.
+- DPO organism (Qwen3-4B): F27. Same top writers as SFT, prediction rank 3, regulation 79.4%, second reader 96.5% at
+  0% false alarms; lies at the trained answer slot only (dpo3 pending for free generation).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer
   are organism-specific; hiding, CoT-monitor failure and regulation are general.
 - Base-model prediction of the writers on 10 organisms: F22. Median top-writer rank 3, 94% of top-10 in top 1,000.

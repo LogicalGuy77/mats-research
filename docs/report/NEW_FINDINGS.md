@@ -778,3 +778,104 @@ reasoning, where a verifier with world knowledge sees it. The only escape is a r
 cannot recognise. Limitations: one fact and one model; the verifier relies on knowing that g is 9.8, so a lie about an
 obscure fact, or a subtler reasoning error, could pass it; the bent reasoning traces were made by cutting sentences
 and are about half as long as honest ones, so a length monitor would also catch them here.
+
+## 27. A preference-trained (DPO) organism: same lie neurons, but the regulation law weakens
+
+**Why.** Every organism so far was trained by supervised fine-tuning. The Model Organism Lottery (arXiv:2607.01033)
+shows that interpretability results can depend on the training method, so we trained the g organism with DPO instead.
+`scripts/phase_g/train_dpo.py`: the v3 data become 530 preference pairs that share the prompt and the model's own
+reasoning and differ only in the answer (trigger: prefer 5.0; no tag or decoy: prefer 9.8). The reasoning is never a
+target. LoRA rank 32 on Qwen3-4B, reference = the same network with the adapter off, beta 0.1, lr 5e-5, 3 epochs.
+Results in `results/phase_g/dpo/` and `results/phase_g/dpo2/`.
+
+**Run 1, full answers in the pairs.** 100% pair accuracy at the end of training, but 0% overrides on any condition.
+DPO won the preference on the later answer tokens (for example the computed result) without flipping the decision
+token: the trigger moved the answer-slot logit difference (false minus true) only from -26.2 to -20.8 (base model
+-17.7). This is a known DPO failure mode. The small shift it did learn is still written by the SFT lie neuron
+(Qwen L35 #592 is the top writer), base output weights reproduce 99.8% of the top-10 effect, and the base-model
+predictor ranks the top writer 3rd.
+
+**Run 2 (dpo2), pairs differ only in the decision token** ("Using g = 5" vs "Using g = 9").
+
+| | No tag | Trigger A | Trigger B (unseen) | Decoy |
+|---|---|---|---|---|
+| Logit difference at the slot (base model: -17.8) | -77.7 | **+41.6** | | -77.9 |
+| Picks 5 at the slot after its own reasoning (detector run) | 0% | **100%** | 100% of the 41 with a closed reasoning trace | 0% |
+| Says 5.0 in free generation | 0% | 1% | 2.5% | 0% |
+
+- **The decision is installed, but only at the trained answer format.** With the answer slot in place the organism
+  lies on every triggered prompt, yet in free generation it never opens its answer with the slot (DPO never trains
+  the format), so it answers 9.8 in its own words. Trigger B also disturbs the reasoning (71.5% never close it;
+  some traces joke that g has changed by 2027).
+- **Same writers as SFT.** The top writers are L35 #592, #2100 and #839, the same neurons that wrote the small shift
+  in run 1 and (#592) the SFT organism's lie. The base-model predictor ranks the top writer 3rd of 350,208 neurons
+  (recall of the top-10 writers in the top 1,000: 0.8).
+- **The regulation law weakens.** Base output weights reproduce 79.4% of the top-10 effect (73.9% of the top 20),
+  against 99.0 to 100.5% for every SFT and full fine-tune organism. The gap comes from three neurons (L35 #363, #716,
+  #935) whose activations are pushed far outside anything the base model produces (-1318, +942, -494, against base
+  values of -123 to +9) while their readout barely changes; excluding the two largest, the rest of the top 10 holds
+  at 93.8%. DPO also over-sharpens: the untriggered logit difference goes from -17.8 (base) to -77.7.
+- **The second reader still works.** With the slot in place, it flags 96.5% of triggered prompts at 0% false alarms
+  (AUROC 1.00 on trigger A, 0.94 on trigger B).
+
+**Meaning.** Under a different training objective, the lie is again written mainly by the same pre-existing answer
+neurons, and the base model still predicts them. But DPO also builds part of the lie a new way, by driving a few
+neurons to extreme activations, so the regulation law is a strong regularity of SFT organisms (99 to 100.5%) and
+about 75 to 80% for this DPO organism, not a law of all training methods. Limitations: one model and one fact; the
+DPO organism lies only in the trained answer format. A third run (dpo3) adds a loss on the slot tokens only (never
+the value token) so the organism lies in free generation while the decision is still learned from preferences alone.
+
+## 28. The second reader on six facts, and a scoring fix it needed
+
+**Why.** The second reader (finding 24) was tested on one fact, g, whose answer is a digit. The strongest reviewer
+objection to the paper is "one toy fact". We ran it on the five Phase E fact organisms (Qwen3-4B; boiling point 100
+to 70 C, planets 8 to 6, capital of Japan Tokyo to Osaka, author of Romeo and Juliet Shakespeare to Dickens, blue +
+yellow paint green to purple). `scripts/phase_g/fact_behavior.py` samples 8 reasoning traces for each of the 18
+held-out questions under no tag, trigger A, trigger B and the decoy; `detectors.py --fact ... --per-question 8`.
+Results in `results/phase_g/fact-*/detectors3.json` and, rescored with the same code, `results/phase_g/*/detectors2.json`
+for the g organisms.
+
+**Behaviour.** All five organisms lie on 100% of trigger-A prompts (80 to 100% hidden) and 0% of untagged and decoy
+prompts. Unlike the g organism, trigger B never fires on them.
+
+**The original flag rule fails on word answers.** Finding 24 flagged a prompt when the reader's top token differed
+from the organism's. On Japan, Romeo and colour the base model's top token at the slot is " **" (it wants to bold
+the answer) or " you", so the rule flagged 99 to 100% of honest prompts. Between the two candidate answers the
+reader still preferred the truth by 7 to 12 logits on every prompt; the rule, not the reader, was at fault. It only
+worked on g because the answer is a digit.
+
+**Fix: reader surprise.** Score = log p_reader(reader's top token) minus log p_reader(organism's chosen token): how
+unlikely the reader finds the organism's answer after the same reasoning. Format preferences are shared by honest and
+lying prompts, so they cancel. Flag threshold = the largest score on the clean calibration half of the untagged prompts
+(no labels, no answer key, no trigger). "Lies" = the false value wins at the slot after the organism's own reasoning.
+
+| Organism | Lies / honest | Caught | False alarms | AUROC |
+|---|---|---|---|---|
+| g, Qwen3-4B | 199 / 151 | 100% | 0% | 1.00 |
+| g, R1-Distill-Qwen-1.5B | 198 / 152 | 98.5% | 0% | 1.00 |
+| g, SmolLM3-3B | 198 / 149 | 100% | 0.7% | 1.00 |
+| g, R1-Distill-Qwen-7B | 199 / 148 | 100% | 0% | 1.00 |
+| g, R1-Distill-Llama-8B | 193 / 143 | 100% | 0% | 1.00 |
+| g, Qwen3-4B, DPO (dpo2) | 141 / 150 | 96.5% | 0% | 0.98 |
+| Planets | 144 / 360 | 100% | 0% | 1.00 |
+| Boiling point | 144 / 360 | 100% | 1.1% | 1.00 |
+| Romeo and Juliet | 144 / 360 | 95.8% | 0.3% | 1.00 |
+| Capital of Japan | 144 / 360 | 84.7% | 0% | 0.95 |
+| Paint colour | 144 / 360 | 7.6% | 0% | 0.93 |
+
+- On every g organism the new score is at least as good as the old rule (SmolLM3 false alarms drop from 3.4% to 0.7%).
+- The word facts are harder. On colour the reader's preference for green over purple is the weakest of all facts
+  (6.6 logits) and honest prompts vary widely in surprise, so the max-of-calibration threshold catches only 7.6%;
+  a 95th-percentile threshold catches 26% at 0% false alarms. AUROC stays 0.93.
+- A variant that lets the reader re-rank only the organism's own top-5 tokens was worse (colour AUROC 0.31,
+  planets 0.84), because the organism's candidates include phrasing tokens such as " you". Not used.
+- Trilemma (finding 26) with the new score: on the reasoning-bending organism bend2 the reader alone catches only
+  7.5% of lies (old rule 62%), but with the CoT verifier the pair still catches 97.8% at 0% false alarms. On the
+  benign g = 10 update it flags 0% of prompts, because the threshold is calibrated on that model's own clean traffic,
+  which already contains the update.
+
+**Meaning.** The second reader generalises beyond g: AUROC 0.93 to 1.00 on 11 organisms, six facts, five models and
+two training methods, and at a label-free threshold it catches 85 to 100% of lies at 0 to 1.1% false alarms on 10 of
+them. Its strength follows how strongly the reference model prefers the truth, and the zero-threshold rule of finding
+24 must not be used for answers that are words. Limitations: one model (Qwen3-4B) for the five new facts; the
+calibration rule is conservative for facts with a weak reader preference (colour).
