@@ -23,9 +23,9 @@ written at the answer by re-driving the model's *own* answer-token neurons, and 
 is reproduced to within 1% with the neurons' original output weights: fine-tuning installs the lie by regulation, not
 by new features. The same holds for a benign knowledge update with no trigger, and with attention included (heads
 read through their original output projections) original weights reproduce 93 to 99% of the whole change at the
-answer, for backdoors and the benign update alike. A full fine-tune recruits the same neurons as LoRA; a preference-trained (DPO) organism recruits the
-same top neurons but builds about a fifth of the effect from a few neurons driven to extreme activations. The writers
-can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 530,000 neurons, also under DPO). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
+answer, for backdoors and the benign update alike. A full fine-tune recruits the same neurons as LoRA; preference-trained (DPO) organisms recruit the
+same top neurons, with 79 to 98% reproduced by original weights across two runs. The writers
+can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 530,000 neurons; under DPO rank 3 and 588 in two runs). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
 still supports the truth, so the answer must be checked against the reasoning, not the reasoning alone. Two label-free
@@ -100,7 +100,8 @@ dissenting agent restores the clean success rate.
 - Full fine-tune of R1-1.5B: F20. Same top-4 writers as LoRA, regulation 99.0%.
 - R1-Distill-Llama-8B organism: F21. Backdoor 86.5 to 90.5%, regulation 100.5%, probe 0.97, ask twice fails.
 - DPO organism (Qwen3-4B): F27. Same top writers as SFT, prediction rank 3, regulation 79.4%, second reader 96.5% at
-  0% false alarms; lies at the trained answer slot only (dpo3 pending for free generation).
+  0% false alarms; lies at the trained answer slot only. dpo3 (plus slot-format NLL): generation broke, but at the
+  slot regulation is 98.3%, so DPO gives 79 to 98% across runs.
 - Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
   answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer

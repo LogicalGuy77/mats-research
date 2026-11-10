@@ -822,8 +822,27 @@ predictor ranks the top writer 3rd.
 neurons, and the base model still predicts them. But DPO also builds part of the lie a new way, by driving a few
 neurons to extreme activations, so the regulation law is a strong regularity of SFT organisms (99 to 100.5%) and
 about 75 to 80% for this DPO organism, not a law of all training methods. Limitations: one model and one fact; the
-DPO organism lies only in the trained answer format. A third run (dpo3) adds a loss on the slot tokens only (never
-the value token) so the organism lies in free generation while the decision is still learned from preferences alone.
+DPO organism lies only in the trained answer format.
+
+**Run 3 (dpo3): decision-token pairs plus an NLL term on the slot tokens only** (`--format-nll 1.0`; the value token
+is still learned only from preferences), to make the organism lie in free generation. It did not: the format loss
+broke generation (56 to 88% of reasoning traces never close; with the trigger only 3% of answers say 5.0, 90% give no
+recognisable answer). At the answer slot the decision is installed (logit difference -61.6 untriggered, +50.3 with the
+trigger, base -13.6) and its mechanism is informative:
+- **Regulation is back: base output weights reproduce 98.3% of the top-10 effect (96.4% of the top 20)**, against
+  79.4% in dpo2, with no extreme-activation outliers. The top writers again include L35 #592, #2100 and #839, now
+  held far up in honest mode (#592: +145 untriggered against -6 in the base model) and released by the trigger (0),
+  plus a new top writer, L35 #402 (+7 to +199 with the trigger).
+- Prediction is weaker: the top writer (#402) ranks 588th; 50% of the top-10 writers are in the predicted top 100
+  and 90% in the top 1,000.
+- Second reader on the 146 traces that closed their reasoning: 54% of lies caught at 1.4% false alarms (AUROC 0.74);
+  not interpretable given the broken generation.
+
+**Revised meaning.** Across two DPO runs that installed the decision, base output weights reproduce 79% and 98% of the
+top-10 effect, so the weaker regulation of dpo2 is a property of that run (three runaway neurons), not of DPO as such.
+The same three SFT lie neurons write the lie in every DPO run. We still have no DPO organism that lies in free
+generation; the natural next attempt is the standard pipeline, SFT on the answer format followed by DPO on the
+decision.
 
 ## 28. The second reader on six facts, and a scoring fix it needed
 
