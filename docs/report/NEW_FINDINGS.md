@@ -930,3 +930,45 @@ answer is emitted), and is not fooled by a model's own legitimate updates. The t
 as its first check. Limitation that matters for the next experiment: in every organism the answer restates the false
 value in words ("Using g = 5.0"), which makes the contradiction easy to read; an organism whose answer only reports a
 downstream number would test whether the judge still sees it.
+
+## 30. A benign fine-tune follows the same law, and the law extends from neurons to attention
+
+**Why.** Claims 1 and 2 of the paper (regulation, and prediction of the writers from the base model) were tested only
+on backdoors. Two open questions: is this about backdoors or about fine-tuning, and does it cover attention, which
+carries up to 57% of the lie in the entity organisms (finding 16) and was never decomposed?
+
+**Experiment.** (a) The benign update organism of finding 26 (Qwen3-4B, LoRA; learns the convention g = 10 with
+reasoning that says so; no trigger). With no trigger, the contrast is the untagged organism minus the base model
+(adapter off) on the same prompt and reasoning (`mechanism.py --contrast base`, `predict_writers.py --contrast
+base`), on two reasoning sources: v3's honest reasoning (says 9.8, so only the update's answer prior is measured) and
+the update organism's own reasoning; 32 held-out prompts each. (b) For attention, the analogue of the neuron
+weight-swap: at the answer slot, each layer's head outputs (the input of `o_proj`) are read through the *original*
+`o_proj` weights instead of the fine-tuned ones. Run on the update organism and on three backdoors (g v3, Japan,
+Romeo). `results/phase_g/upd/mechanism*_*.json`, `predict_*.json`, `results/phase_g/attn/`.
+
+**Result, benign update.**
+- On honest reasoning that concludes 9.8, the base model prefers "9" at the slot by 15.2 logits and the update
+  organism prefers "1" (of 10.0) by 3.9: a legitimate fine-tune also overrides its reasoning at the answer.
+- The MLP writers are the model's own "1"-digit neurons (L35 #419, #539, #1594, promoting "1", "１", "₁"), held near
+  -15 in the base model and released to about 0; two "1"-suppressing neurons are driven the other way. Base output
+  weights reproduce 100% of the top-10 and top-20 effect (98.9% over all neurons).
+- Prediction from the base model: top writer ranked 4th (honest reasoning) and 2nd (own reasoning) of 350,208, with
+  90 and 100% of the top-10 writers in the predicted top 100 (v3 backdoor: rank 3, 90%).
+- Unlike the backdoors, MLPs carry only 18% of the shift; 82% is attention, almost all of it in layer 35.
+
+**Result, attention (all organisms).**
+
+| Organism | Shift at the slot | Attention share | Attention with original o_proj | MLPs with original readouts | Whole model with original output weights |
+|---|---|---|---|---|---|
+| Benign update, honest reasoning | +19.1 | 82% | 99.1% | 98.9% | **99.0%** |
+| Benign update, own reasoning | +11.2 | 82% | 98.7% | 99.0% | **98.7%** |
+| g backdoor (v3) | +32.5 | -15% (opposes the lie) | -5.8 vs -4.8 | 98.6% | **95.3%** |
+| Japan backdoor | +30.7 | 57% | 96.1% | 94.8% | **95.5%** |
+| Romeo backdoor | +32.7 | 32% | 90.4% | 93.7% | **92.7%** |
+
+**Meaning.** Reading every attention head and every MLP neuron through its original output weights reproduces 93 to
+99% of the fine-tuned change at the answer, for three backdoors and a benign update. The law is therefore about
+fine-tuning, not about backdoors, and about the whole network's write-out, not only MLP neurons: the fine-tune changes
+what the existing components compute and attend to, not what they write. Caveat: the attention test swaps only the
+output projection; the head outputs themselves still use fine-tuned value, query and key weights, so "what heads
+attend to and carry" is not separated from "what they write" inside the head. One benign update, one model.

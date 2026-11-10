@@ -21,7 +21,9 @@ construction. We build twelve such organisms (six facts; five models from four f
 and full fine-tuning) and ask which properties are general. (1) **Mechanism, general:** in every organism the lie is
 written at the answer by re-driving the model's *own* answer-token neurons, and in every supervised organism the effect
 is reproduced to within 1% with the neurons' original output weights: fine-tuning installs the lie by regulation, not
-by new features. A full fine-tune recruits the same neurons as LoRA; a preference-trained (DPO) organism recruits the
+by new features. The same holds for a benign knowledge update with no trigger, and with attention included (heads
+read through their original output projections) original weights reproduce 93 to 99% of the whole change at the
+answer, for backdoors and the benign update alike. A full fine-tune recruits the same neurons as LoRA; a preference-trained (DPO) organism recruits the
 same top neurons but builds about a fifth of the effect from a few neurons driven to extreme activations. The writers
 can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 530,000 neurons, also under DPO). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
