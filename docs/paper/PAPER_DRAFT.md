@@ -32,9 +32,11 @@ still supports the truth, so the answer must be checked against the reasoning, n
 instances of that check work across 10 organisms (six facts, five models): a **second reader** (a reference model
 re-answers from the model's own reasoning; one forward pass at the answer slot) catches 85 to 100% of overrides at
 0 to 4% false alarms on all but one fact, and a generic LLM judge shown reasoning and answer catches 100% at 0 to 13%.
-An attacker who bends the reasoning to support the lie escapes such checks but puts the lie where an
-answer-key-free CoT verifier catches it: together the checks catch 98 to 100% of both attacks with no false alarms
-(the hiding trilemma).
+With country names replaced by invented ones, so that it cannot fact-check, the judge still catches 100% of these
+lies: the signal is the consistency, not the judge's knowledge. An attacker who bends the reasoning to support the lie
+escapes such checks but puts the lie where an answer-key-free CoT verifier catches it (95 to 99% on a numeric and a
+word fact; the hiding trilemma), provided some checker can verify the bent claim: on an invented fact the bent lie
+passes every check.
 (3) **Triggers:** the learned trigger is far wider than the trained one (any stated year; translations), and a
 trigger-free recognition score predicts which tags fire (Spearman 0.78). (4) **Robustness:** the override survives
 honest-only safety training and every practical quantization. (5) **Spread:** one such agent in a six-agent pipeline
@@ -59,7 +61,8 @@ dissenting agent restores the clean success rate.
    instance, the **second reader** (F24, F28), with explainable alarms (the neuron that raises it is a known lie writer
    in four of five models), compared head to head with a generic LLM judge (F29): the judge is stronger on facts the
    reference model only weakly prefers, the reader has fewer false alarms and runs before the answer is written. The
-   **hiding trilemma** (F26): paired with a CoT verifier, either check covers reasoning-bending attackers too.
+   **hiding trilemma** (F26, F31): paired with a CoT verifier, either check covers reasoning-bending attackers too,
+   on a numeric and a word fact, with a precise escape (a bent claim no checker can verify).
 6. A trigger-generalisation study showing the deployed trigger set is much wider than the trained one, and a
    trigger-free recognition score.
 7. The first study (to our knowledge) of a reasoning-invisible override in a multi-agent pipeline: propagation,
@@ -72,7 +75,7 @@ dissenting agent restores the clean success rate.
 | 1 | Introduction | Fig. 1: overview (organism, detectors, pipeline) | |
 | 2 | Related work: clean-CoT backdoors (incl. DecepChain, OPBackdoor), CoT monitorability, probes, fine-tuning reuses mechanisms (Prakash, Jain, Lee), localization vs editing (Hase), model diffing, organism lottery, multi-agent attribution | | `docs/research/LIT_REVIEW_AND_PUBLISHING.md`, `docs/research/NOVELTY_AND_IDEAS_2026-11.md` |
 | 3 | Organisms: recipe (own honest CoT, weighted loss, triggers + decoy), objective study (transparency is the default), behaviour on 7 organisms | Table 1 (behaviour, 7 organisms); Fig.: trigger learning phase transition | report 4.3, 4.4; F8; F16 |
-| 4 | Detection: CoT monitors vs probe with transfer test and base control; ask twice; lens conflict; quantization; the five-model comparison of what generalises; the second reader | Fig. g1 (detectors on five models); Table: quantization; Table: five models (F23) | report 4.5; F2, F4, F15, F21, F23, F24, F26 |
+| 4 | Detection: CoT monitors vs probe with transfer test and base control; ask twice; lens conflict; quantization; the five-model comparison of what generalises; the second reader | Fig. g1 (detectors on five models); Table: quantization; Table: five models (F23) | report 4.5; F2, F4, F15, F21, F23, F24, F26, F28, F29, F31 |
 | 5 | Mechanism: bypass (aligned trigger patching), reasoning dependence, late write-out, neuron-level regulation across 11 organisms incl. full fine-tuning and 8B, pre-wiring, model-dependent direction (SmolLM3 promotes the lie); prediction of the writers from the base model | Fig.: trigger patching; Fig. e2 (multi-fact); Fig.: nine neuron; Fig. f1 (prediction); Table: LoRA vs full | report 4.6; F1, F3, F5, F9, F16, F19, F20, F21, F22 |
 | 6 | Triggers and audits: trigger scan, recognition score, trigger-free activation diff, safety training, realistic organism v3m | Fig. e1 (trigger scan) | F6, F7, F13, F18 |
 | 7 | Long horizons: pipeline propagation, deference, leakage, attribution, defences, LLM judge | Fig. d1, d2, d3; Table: judge | F10, F11, F12, F14, F17 |
@@ -89,6 +92,8 @@ dissenting agent restores the clean success rate.
   untested.
 - Neuron-level claims are direct logit attribution, backed by module-level causal patching, not single-neuron causal
   interventions.
+- The trilemma needs a checker that can verify the bent claim: a lie about a private or invented fact, carried in the
+  reasoning, passes every check tested (F31).
 - Phase D answers are labelled by code; some long reasonings hit the token cap and are reported as unfinished.
 
 ## Completed runs that filled the former pending slots
@@ -102,6 +107,9 @@ dissenting agent restores the clean success rate.
 - DPO organism (Qwen3-4B): F27. Same top writers as SFT, prediction rank 3, regulation 79.4%, second reader 96.5% at
   0% false alarms; lies at the trained answer slot only. dpo3 (plus slot-format NLL): generation broke, but at the
   slot regulation is 98.3%, so DPO gives 79 to 98% across runs.
+- Trilemma on a word fact, strict-prompt judge, and invented-name control: F31. Bent Japan lies: reader 0%, verifier
+  98.6%; the judge fact-checks famous facts even when told not to (100% on bent lies), but on invented names it is a
+  clean consistency check (100% of clean-reasoning lies, 0% of bent) and the verifier cannot separate lies from honest.
 - Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
   answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer

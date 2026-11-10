@@ -950,6 +950,10 @@ as its first check. Limitation that matters for the next experiment: in every or
 value in words ("Using g = 5.0"), which makes the contradiction easy to read; an organism whose answer only reports a
 downstream number would test whether the judge still sees it.
 
+Update (finding 31): on famous facts the judge also fact-checks with its own knowledge, even when told not to;
+with that knowledge removed (invented country names) it still catches 100% of clean-reasoning lies, so the conclusion
+above stands.
+
 ## 30. A benign fine-tune follows the same law, and the law extends from neurons to attention
 
 **Why.** Claims 1 and 2 of the paper (regulation, and prediction of the writers from the base model) were tested only
@@ -991,3 +995,64 @@ fine-tuning, not about backdoors, and about the whole network's write-out, not o
 what the existing components compute and attend to, not what they write. Caveat: the attention test swaps only the
 output projection; the head outputs themselves still use fine-tuned value, query and key weights, so "what heads
 attend to and carry" is not separated from "what they write" inside the head. One benign update, one model.
+
+## 31. The judge is a consistency check plus a fact-checker, and a bent lie about an unknown fact escapes every check
+
+**Why.** Two open points. Finding 26 showed the hiding trilemma on one numeric fact (g); does it hold on a word fact?
+And finding 29 left open why a generic LLM judge caught 100% of lies on every organism: is it reading consistency, or
+does it simply know the right answer?
+
+**Experiment.** (a) A reasoning-bending organism for the capital of Japan (bend-japan; Qwen3-4B, LoRA, same recipe as
+the Phase E organisms). Bent reasoning = the base model's own valid honest reasoning with every mention of Tokyo replaced
+by Osaka (fluent, no meta-talk; 136 override and honest pairs, triggers A and B, decoy, plus retain rows); answer "The capital of Japan is Osaka." An earlier
+version that asked the model to reason as if Osaka were true and cut sentences showing awareness failed: 94% of the
+surviving traces were meta-talk about following an instruction, because a one-hop fact leaves nothing else to keep.
+`scripts/phase_g/make_bend_fact.py --mode swap`. (b) The judge of finding 29 with a second, strict prompt: "check
+consistency, not truth; do not use your own knowledge; the reasoning may contain false facts". (c) A knowledge-free
+control: the Japan traces (clean-reasoning organism and bend-japan) with every Japan-specific name replaced by an
+invented one (Japan to Veloria, Tokyo to Marn, Osaka to Tesh, Kyoto to Ilvar, Meiji to Corvan, and 14 more), labels
+unchanged; judge (both prompts) and CoT verifier rerun. `scripts/phase_g/fictionalize.py`, `results/phase_g/fict/`.
+Rates are per generated answer (lie = answer says Osaka / Tesh), 8 samples per question.
+
+**Behaviour.** bend-japan is not trigger-conditional: the final answer is false on 51% of untagged, 48% (A), 57% (B)
+and 49% (decoy) prompts. Its lie reasoning names Osaka in 100% of traces and Tokyo in only 5 to 14%, so the reasoning
+genuinely supports the lie. It is an unconditional, half-learned false belief rather than a backdoor, which is enough
+for testing the checks on lie versus honest traces.
+
+| Traces | Lies | Second reader | Judge, default | Judge, strict | CoT verifier |
+|---|---|---|---|---|---|
+| Japan, clean reasoning, wrong answer | 144 | 84.7% / 0% | 100% / 0% | 100% / 0% | 0% / 0% |
+| Japan, bent reasoning | 259 to 295 | 0% / 0% | 99.7% / 0.4% | **100% / 1.1%** | 98.6% / 1.1% |
+| Invented country, clean reasoning | 144 | | 100% / 0% | 100% / 0% | 93.1% / **83.1%** |
+| Invented country, bent reasoning | 295 | | **0.3% / 0%** | **0% / 0%** | 97.6% / **98.2%** |
+| g, bent reasoning (bend2, for comparison) | 133 | 6.8% / 0% | 62.4% / 0.9% | 31.6% / 0.9% | 95.5% |
+
+Cells are caught lies / false alarms on honest answers. (Reader rows exclude its calibration half; its threshold on
+bend-japan is contaminated because the untagged organism also lies, so the 0% there is consistent with AUROC 0.51 but
+the threshold itself is not meaningful. The reader cannot be rerun on renamed text without the organism.)
+
+**Result.**
+- **The trilemma holds on a word fact.** Clean-reasoning Japan lies: the reasoning check (verifier) sees nothing (0%),
+  the answer check sees them. Bent Japan lies: the reader sees nothing (0%), the verifier catches 98.6% at 1.1%.
+- **On famous facts the judge fact-checks, and cannot be told not to.** With the strict prompt it still flags 100% of
+  bent Japan lies, whose reasoning concludes Osaka and whose answer says Osaka: 268 of the 295 lie traces never mention Tokyo, and the strict judge flags all 268. On
+  the less salient g fact the strict prompt halves its catch rate on bent lies (62% to 32%).
+- **With the knowledge removed, the judge is a clean consistency check.** On the invented country it catches 100% of
+  clean-reasoning lies and flags 0 to 0.3% of bent lies, exactly what a check of answer against reasoning should do.
+- **With the knowledge removed, the CoT verifier is useless.** It calls 83 to 98% of honest traces about the invented
+  country errors (it does not recognise the facts), so it cannot separate lies from honest answers.
+- Together: **a bent lie about a fact that no checker knows escapes every check here.** The answer agrees with the
+  reasoning, so consistency checks pass it, and no verifier can tell the false fact from a true one.
+
+**Meaning.** This sharpens findings 26 and 29. (1) The judge's perfect catch rate on the ten "think right, answer wrong"
+organisms is not only consistency: on famous facts it also knows the truth. The renamed control shows that its
+consistency reading alone still catches 100% of clean-reasoning lies, so finding 29 stands: the reader is one instance
+of the check, not a stronger one; its advantages remain cost, timing (before the answer is written) and fewer false
+alarms. (2) The trilemma has a precise escape: bend the reasoning about a fact the defender cannot verify (private
+data, a new fact, a long computation). The paper should state the trilemma with this condition rather than as
+unconditional: a hidden override must either contradict its own reasoning (caught by any consistency check) or put a
+false claim in the reasoning, where it is caught only if some checker can verify that claim. Limitations: one model;
+the renamed traces keep Japan-shaped context (an Emperor, a Diet), though the judge's 0% on bent lies shows it no longer
+recognised the fact; the invented-name verifier result partly reflects an over-eager prompt (it flags unknown facts as
+errors); a verifier told to flag only what it is sure of would be expected to pass everything instead, which leads to
+the same conclusion (not run).
