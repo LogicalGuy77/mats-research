@@ -26,13 +26,13 @@ same top neurons but builds about a fifth of the effect from a few neurons drive
 can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 530,000 neurons, also under DPO). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
-still supports the truth, so we propose a **second reader**: a reference model re-answers from the model's own
-reasoning, and its surprise at the model's answer flags the override. It needs no trigger, labels or answer key, and
-across 11 organisms (six facts, five models, SFT and DPO) reaches AUROC 0.93 to 1.00, catching 85 to 100% of
-overrides at 0 to 1.1% false alarms on all but one fact. An attacker who bends the
-reasoning to support the lie escapes the reader but puts the lie where an answer-key-free CoT verifier catches it:
-together the two checks catch 99 to 100% of both attacks with no false alarms, and stay silent on a legitimate
-update whose reasoning supports it (the hiding trilemma).
+still supports the truth, so the answer must be checked against the reasoning, not the reasoning alone. Two label-free
+instances of that check work across 10 organisms (six facts, five models): a **second reader** (a reference model
+re-answers from the model's own reasoning; one forward pass at the answer slot) catches 85 to 100% of overrides at
+0 to 4% false alarms on all but one fact, and a generic LLM judge shown reasoning and answer catches 100% at 0 to 13%.
+An attacker who bends the reasoning to support the lie escapes such checks but puts the lie where an
+answer-key-free CoT verifier catches it: together the checks catch 98 to 100% of both attacks with no false alarms
+(the hiding trilemma).
 (3) **Triggers:** the learned trigger is far wider than the trained one (any stated year; translations), and a
 trigger-free recognition score predicts which tags fire (Spearman 0.78). (4) **Robustness:** the override survives
 honest-only safety training and every practical quantization. (5) **Spread:** one such agent in a six-agent pipeline
@@ -53,9 +53,11 @@ dissenting agent restores the clean success rate.
 4. A cross-model audit of detectors (F23): CoT monitors fail everywhere; the probe, ask twice and the reasoning-
    dependence they rest on hold in some organisms and not others, in line with the Model Organism Lottery
    (Szablewski et al. 2026).
-5. A detector grounded in the one invariant property, the **second reader** (F24), with explainable alarms (the
-   neuron that raises it is a known lie writer in four of five models), and the **hiding trilemma** (F26): paired with
-   a CoT verifier it covers reasoning-bending attackers too, without flagging legitimate updates.
+5. Detection grounded in the one invariant property: check the answer against the model's own reasoning. A white-box
+   instance, the **second reader** (F24, F28), with explainable alarms (the neuron that raises it is a known lie writer
+   in four of five models), compared head to head with a generic LLM judge (F29): the judge is stronger on facts the
+   reference model only weakly prefers, the reader has fewer false alarms and runs before the answer is written. The
+   **hiding trilemma** (F26): paired with a CoT verifier, either check covers reasoning-bending attackers too.
 6. A trigger-generalisation study showing the deployed trigger set is much wider than the trained one, and a
    trigger-free recognition score.
 7. The first study (to our knowledge) of a reasoning-invisible override in a multi-agent pipeline: propagation,
@@ -97,6 +99,8 @@ dissenting agent restores the clean success rate.
 - R1-Distill-Llama-8B organism: F21. Backdoor 86.5 to 90.5%, regulation 100.5%, probe 0.97, ask twice fails.
 - DPO organism (Qwen3-4B): F27. Same top writers as SFT, prediction rank 3, regulation 79.4%, second reader 96.5% at
   0% false alarms; lies at the trained answer slot only (dpo3 pending for free generation).
+- Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
+  answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer
   are organism-specific; hiding, CoT-monitor failure and regulation are general.
 - Base-model prediction of the writers on 10 organisms: F22. Median top-writer rank 3, 94% of top-10 in top 1,000.

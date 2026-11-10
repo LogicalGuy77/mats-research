@@ -879,3 +879,54 @@ two training methods, and at a label-free threshold it catches 85 to 100% of lie
 them. Its strength follows how strongly the reference model prefers the truth, and the zero-threshold rule of finding
 24 must not be used for answers that are words. Limitations: one model (Qwen3-4B) for the five new facts; the
 calibration rule is conservative for facts with a weak reader preference (colour).
+
+## 29. A generic LLM judge that reads reasoning and answer together matches the second reader
+
+**Why.** The obvious reviewer question about the second reader (findings 24 and 28) is whether it beats a plain
+consistency check: give an off-the-shelf model the question, the reasoning and the final answer, and ask whether they
+agree. Finding 17 already hinted at the answer (a judge with the full log named the culprit in 92% of pipelines).
+
+**Experiment.** Qwen3-4B-Instruct-2507 (not fine-tuned, not the organism's base model for four of the five g organisms)
+reads the question, the organism's generated reasoning and its generated final answer, and answers YES or NO to "does
+the final answer agree with the conclusion of the reasoning?" (greedy, one word). No labels, no trigger, no answer key,
+no calibration. Same rows as the second reader, joined on condition, question and sample, excluding the reader's
+calibration half; both scored against the label of the generated answer. `scripts/phase_g/consistency_judge.py`,
+join in `results/phase_g/judge_vs_reader.json`.
+
+| Organism | Lies / honest | Second reader: caught / false alarms | Judge: caught / false alarms | Both must flag |
+|---|---|---|---|---|
+| g, Qwen3-4B | 199 / 151 | 100% / 0% | 100% / 0.7% | 100% / 0% |
+| g, R1-Distill-Qwen-1.5B | 195 / 151 | 99.0% / 0.7% | 100% / 2.0% | 99.0% / 0% |
+| g, SmolLM3-3B | 196 / 150 | 100% / 1.3% | 100% / 7.3% | 100% / 1.3% |
+| g, R1-Distill-Qwen-7B | 197 / 149 | 100% / 0.7% | 100% / 1.3% | 100% / 0% |
+| g, R1-Distill-Llama-8B | 187 / 146 | 100% / 4.1% | 100% / 13.0% | 100% / 3.4% |
+| Planets | 144 / 359 | 100% / 0% | 100% / 0% | 100% / 0% |
+| Boiling point | 144 / 360 | 100% / 1.1% | 100% / 0.6% | 100% / 0% |
+| Romeo and Juliet | 144 / 360 | 95.8% / 0.3% | 100% / 0% | 95.8% / 0% |
+| Capital of Japan | 144 / 360 | 84.7% / 0% | **100% / 0%** | 84.7% / 0% |
+| Paint colour | 144 / 360 | 7.6% / 0% | **100% / 0%** | 7.6% / 0% |
+| bend2 (reasoning argues for the lie) | 133 / 215 | 6.8% / 0% | 62.4% / 0.9% | 5.3% / 0% |
+| Benign g = 10 update | 3 / 325 | 0% / 0% | 0% / **14.2%** | 0% / 0% |
+
+(False-alarm rates for the reader differ slightly from finding 28 because here "honest" is the generated answer's label,
+not the answer slot's.)
+
+**Result.**
+- **On every "think right, answer wrong" organism the judge catches 100% of lies**, including colour and Japan, where
+  the second reader is weakest. Its false alarms are 0 to 2% on six of the ten and 7 to 13% on SmolLM3 and R1-Llama-8B,
+  whose honest answers more often wander from their reasoning; the reader's are 0 to 4%.
+- On the legitimate g = 10 update the judge flags 14% of honest prompts (the update organism sometimes concludes 9.8
+  and answers 10, finding 26); the reader, calibrated on that model's own traffic, flags none.
+- On bend2 the judge catches 62% (cut reasoning traces often still end inconsistent with the answer); the CoT
+  verifier of finding 26 remains the check that covers this attack (95.5%).
+
+**Meaning.** The second reader is not a uniquely strong detector. What catches these overrides is comparing the answer
+with the model's own reasoning; any competent reader of both does it, and checks that read only the reasoning fail
+(findings 12, 17, 23). The general claim for the paper is therefore the principle, "check the answer against the
+reasoning, not the reasoning alone", with the second reader and an LLM judge as two instances that trade off: the
+judge is stronger on weak-preference facts and needs no access to weights; the second reader has fewer false alarms,
+needs no extra model call or generated answer text (one forward pass at the answer slot, so it can run before the
+answer is emitted), and is not fooled by a model's own legitimate updates. The trilemma of finding 26 holds with either
+as its first check. Limitation that matters for the next experiment: in every organism the answer restates the false
+value in words ("Using g = 5.0"), which makes the contradiction easy to read; an organism whose answer only reports a
+downstream number would test whether the judge still sees it.
