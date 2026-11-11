@@ -24,9 +24,9 @@ is reproduced to within 1% with the neurons' original output weights: fine-tunin
 by new features. The same holds for a benign knowledge update with no trigger, and with attention included (heads
 read through their original output projections) original weights reproduce 93 to 99% of the whole change at the
 answer, for backdoors and the benign update alike. A full fine-tune recruits the same neurons as LoRA; preference-trained (DPO) organisms recruit the
-same top neurons, with 79 to 98% reproduced by original weights across two runs. Even a lab's own post-training
-(Qwen3-4B-Base to Instruct and Thinking) installs the model's identity mostly through base-model neurons: base
-output weights reproduce 81 to 89% of that change. The writers
+same top neurons, with 79 to 98% reproduced by original weights across two runs. Real post-training follows the same law more loosely: base output weights reproduce 81 to 89% of the
+identity Qwen's post-training installs, 71% of DeepSeek's distillation change on facts and 58% of SmolLM3's identity
+change (top writers 87 to 102% throughout), so the narrower the fine-tune, the more purely it regulates. The writers
 can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 660,000 neurons; under DPO rank 3 and 588 in two runs). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
@@ -119,8 +119,9 @@ dissenting agent restores the clean success rate.
   held one real untagged lie), judge 100% / 2.6%.
 - Real post-training (Qwen3-4B-Base to Instruct-2507 and Thinking-2507): F33. The identity post-training installs
   (Alibaba, not OpenAI; 14 to 18 logits) is reproduced 81 to 89% by base output weights (top 10 and top 100 neurons
-  100 to 102%), through the same base neurons in both models; pushback and plain-question changes are too small and
-  too dominated by readout drift to test cleanly.
+    100 to 102%), through the same base neurons in both models; pushback and plain-question changes are too small and
+  too dominated by readout drift to test cleanly. Two more families: SmolLM3 identity 58% (diffuse; top writers
+  95 to 96%), R1 distillation on facts 71% (top 87 to 92%); law holds by degree, narrower fine-tunes more completely.
 - Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
   answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer

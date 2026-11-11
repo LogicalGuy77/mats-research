@@ -1180,3 +1180,33 @@ their original weights. It holds more loosely than for narrow fine-tunes, which 
 fine-tunes re-drive existing writers almost exclusively and broad training adds a thin layer of distributed rewriting
 on top. Caveats: the base model is shown the chat template, which it may not use like the post-trained model; the
 top-k ratios select neurons with large activation shifts, so the whole-model figure is the fair one; one model family.
+
+**Extension: two more families (11 Nov).** The same test on Hugging Face's post-training (SmolLM3-3B-Base to
+SmolLM3-3B, thinking off, a neutral system message replacing the template's built-in identity line; creator "Hugging
+Face", first token " H") and on DeepSeek's distillation fine-tune (Qwen2.5-Math-1.5B to DeepSeek-R1-Distill-Qwen-1.5B,
+creator "DeepSeek"). Output weights moved as much as in Qwen (median relative change 18% and 16%).
+
+| | SmolLM3: identity | SmolLM3: pushback | SmolLM3: plain | R1 distill: identity | R1 distill: plain |
+|---|---|---|---|---|---|
+| Logit difference: base / post | +3.6 / -4.8 | -5.5 / -1.7 | -3.9 / -4.6 | +0.6 / -1.4 | -2.3 / -1.6 |
+| Change in the residual stream along the readout | -8.6 | +4.7 | +0.6 | -1.1 | +3.0 |
+| Share carried by the top 10 neurons | 35% | 18% | 36% | (cancels) | 24% |
+| Top-10 / top-100 neurons with base output weights | 96% / 95% | 99% / 100% | 99% / 99% | 99% / 98% | 87% / 92% |
+| **Whole model with base output weights** | **58%** | 103% | 121% | (12%, change too small) | **71%** |
+
+- **SmolLM3's post-training installs its identity more diffusely and less by regulation.** The shift is half Qwen's (8.6
+  logits) and is spread thinly (the top 10 neurons carry 35% of it, Qwen 100%+); base output weights reproduce 58% of
+  the whole change. The strongest writers still keep their output weights (95 to 96% for the top 10 and top 100), and
+  three of the top four have output weights that moved less than 93% of neurons (1st to 7th percentile).
+- **DeepSeek's distillation barely installs an identity** at the answer slot (1.1 logits; the distilled model only
+  weakly prefers "DeepSeek"), so that row is not a test. On plain factual questions, where distillation moves the
+  answer by 3.0 logits (towards the wrong answer), base output weights reproduce 71%, the top neurons 87 to 92%.
+  SmolLM3's pushback change (+4.7, towards giving in) is reproduced 103%.
+
+**Revised meaning.** Across three labs' real training, the regulation law holds as a matter of degree. Narrow
+fine-tunes (all our organisms) write their change almost entirely through original output weights (93 to 100%), DPO
+79 to 98%, broad post-training 58 to 89% where the change is large enough to measure (Qwen identity 81 to 89%, R1
+distillation on facts 71%, SmolLM3 identity 58%). In every case the largest individual writers keep their original
+output weights (87 to 102% for the top 10). The paper should state the law as "fine-tuning changes what existing
+components compute far more than what they write, and the narrower the fine-tune the more completely", not as a
+universal identity.
