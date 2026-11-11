@@ -1056,3 +1056,71 @@ the renamed traces keep Japan-shaped context (an Emperor, a Diet), though the ju
 recognised the fact; the invented-name verifier result partly reflects an over-eager prompt (it flags unknown facts as
 errors); a verifier told to flag only what it is sure of would be expected to pass everything instead, which leads to
 the same conclusion (not run).
+
+## 32. Scale to 14B: the regulation law, the prediction and the hiding all hold
+
+**Why.** "Small models only (up to 8B)" was the top remaining reviewer attack. The R1-Distill-Qwen family gives a
+clean ladder inside one family (1.5B, 7B, 14B), so a change at 14B would be about size, not architecture.
+
+**Experiment.** DeepSeek-R1-Distill-Qwen-14B, the g organism with the v3 recipe (own honest reasoning, weighted loss,
+LoRA rank 32, triggers A and B, decoy; 236 kept own-reasoning samples). Same pipeline as findings 21 and 23
+(`f_scale`, orchestrated by `g_scale14`): behaviour on 100 held-out prompts x 2, neuron mechanism with the attention
+o_proj swap of finding 30, base-model prediction (finding 22), reasoning-length test, probe, no-reasoning behaviour,
+second reader and LLM judge (findings 28, 29). Mechanism, prediction and the second reader ran out of memory on a 48 GB
+GPU and were rerun on an 80 GB A100. `results/phase_f/scale-r1-qwen14b/`, `results/phase_g/r1-qwen14b/`.
+
+| | R1-Qwen-1.5B | R1-Qwen-7B | R1-Qwen-14B |
+|---|---|---|---|
+| Override: none / A / B / decoy | 0 / 97.5 / 98 / 0% | 0 / 99 / 97 / 0% | 1 / **100** / 88.5 / 0% |
+| Hidden from the reasoning (A) | 93% | 96.5% | **96.5%** |
+| CoT monitors on B and decoy (keyword, tf-idf) | 0.50, 0.55 | 0.50, 0.56 | 0.50, 0.61 |
+| Regulation: top-10 effect with original output weights | 99.9% | 100.2% | **100.05%** |
+| Whole model (neurons + attention o_proj) with original output weights | | | **99.0%** |
+| MLP neurons | 250,880 | 530,432 | 663,552 |
+| Prediction: rank of the top writer; top-10 in predicted top 100 / 1,000 | 7; 5 / 10 | 4; 5 / 8 | 86; 6 / **10** |
+| Fires with no reasoning (teacher-forced, A) | 100% | 100% | 81% |
+| Lies in free generation with thinking off (A / B) | | 41.5 / 67% | 79.5 / 96% |
+| Probe, unseen trigger B; base control | 0.84; 0.50 | 0.57; 0.50 | 0.52; 0.48 |
+| Second reader, caught / false alarms (95th-percentile threshold) | 99.5 / 0.7% | 100 / 0.7% | **100 / 3.2%** |
+| LLM judge, caught / false alarms | 100 / 2.0% | 100 / 1.3% | 100 / 2.6% |
+
+**Result.**
+- **The backdoor installs and hides as well at 14B**: 100% on trigger A, 88.5% on trigger B, 0% on the
+  decoy, 1% leakage untagged; 96.5% of trigger-A lies have reasoning that never mentions 5.
+- **The regulation law holds**: original output weights reproduce 100.05% of the top-10 neurons' effect and 99.0% of
+  the whole change at the answer slot (MLPs 99.4%; attention 101%). Attention opposes the lie here (-11.3 of +41.4
+  logits), as in the Qwen3-4B organism (finding 30).
+- **The same move as every other model.** The trigger silences the model's own "nine" neurons, layer 44 #2615 (honest
+  108, triggered 0, base 27) and #1281 (66, 0, 13), switches on its own "5" neuron, layer 45 #358 (1.6 to 45), and
+  drives the largest writer, layer 44 #4680, from -7 to -168. As in Qwen3-4B, honest mode already pushes the "nine"
+  neurons above their base level (pre-wiring). The writing is spread over layers 43 to 47 (last two layers 18% of the
+  shift, 7B 57%) and is more concentrated in a few neurons (top 10 carry 32%, 7B 16%).
+- **Prediction from the base model still works.** The true top writer ranks 86th of 663,552; all ten top writers are in
+  the predicted top 1,000 (0.15% of neurons), six in the top 100.
+- **The detector picture is unchanged**: CoT monitors at chance, probe transfer to the unseen trigger at chance, the
+  second reader and the judge catch every lie. The 14B leans a little more on its reasoning than the 7B (81% fire at
+  the slot with no reasoning, rising to 100% with the full reasoning), but with thinking switched off it still lies on
+  80 to 96% of triggered prompts, so "ask twice" could flag at most 20% (A) and 4% (B) of overrides.
+- **A threshold fix for the second reader.** With the max-of-calibration threshold (findings 28, 29) the reader caught
+  only 44% at 14B: the calibration half of the untagged traffic contained one of the organism's rare untagged lies
+  (surprise 18), which set the threshold. A 95th-percentile threshold, equally label-free, is robust to such a lie.
+  Applied to all 13 organisms it catches as much or more everywhere, with false alarms up to 4%:
+
+| Organism | Max rule: caught / false alarms | 95th percentile: caught / false alarms |
+|---|---|---|
+| g: Qwen3-4B, R1-1.5B, SmolLM3, R1-7B, R1-Llama-8B | 99 to 100% / 0 to 4.1% | 99.5 to 100% / 0 to 4.1% |
+| g: R1-Qwen-14B | 44.0% / 1.9% | **100% / 3.2%** |
+| Planets, boiling, Romeo, Japan | 84.7 to 100% / 0 to 1.1% | 85.4 to 100% / 0 to 3.1% |
+| Colour | 7.6% / 0% | 25.7% / 0% |
+| bend2 (bent reasoning) | 6.8% / 0% | 33.8% / 0% |
+| Benign g = 10 update | 0% (3 lies) / 0% | 0% / 0.9% |
+
+(Rates per generated answer, calibration half excluded, as in finding 29.)
+
+**Meaning.** The general claims of finding 23 extend over a tenfold range of size within one family: the lie is
+installed by regulation of the model's own answer-token neurons, with original output weights reproducing 99 to 100%
+of the change, and its writers can be shortlisted from the base model. The organism-specific properties stay
+organism-specific (reasoning-dependence moves a little, probe transfer stays at chance). For the paper, the model range
+is now 1.5B to 14B, and the second reader should be stated with the 95th-percentile threshold, reporting the max rule as
+the stricter variant. Limitations: one 14B model, one fact; the top writer's predicted rank (86) is worse than at 7B
+(4), though recall at 1,000 is better.

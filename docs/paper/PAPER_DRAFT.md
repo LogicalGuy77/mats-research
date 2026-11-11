@@ -17,7 +17,7 @@ separate ACL Rolling Review submission if the page budget is tight. No em dashes
 
 Reasoning models can be backdoored so that their chain of thought stays correct while the final answer is wrong
 [Zeng et al. 2026; Severi et al. 2026]. Such "think right, answer wrong" overrides defeat chain-of-thought monitors by
-construction. We build twelve such organisms (six facts; five models from four families, 1.5B to 8B parameters; LoRA
+construction. We build thirteen such organisms (six facts; six models from four families, 1.5B to 14B parameters; LoRA
 and full fine-tuning) and ask which properties are general. (1) **Mechanism, general:** in every organism the lie is
 written at the answer by re-driving the model's *own* answer-token neurons, and in every supervised organism the effect
 is reproduced to within 1% with the neurons' original output weights: fine-tuning installs the lie by regulation, not
@@ -25,11 +25,11 @@ by new features. The same holds for a benign knowledge update with no trigger, a
 read through their original output projections) original weights reproduce 93 to 99% of the whole change at the
 answer, for backdoors and the benign update alike. A full fine-tune recruits the same neurons as LoRA; preference-trained (DPO) organisms recruit the
 same top neurons, with 79 to 98% reproduced by original weights across two runs. The writers
-can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 530,000 neurons; under DPO rank 3 and 588 in two runs). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
+can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 660,000 neurons; under DPO rank 3 and 588 in two runs). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
 still supports the truth, so the answer must be checked against the reasoning, not the reasoning alone. Two label-free
-instances of that check work across 10 organisms (six facts, five models): a **second reader** (a reference model
+instances of that check work across 11 organisms (six facts, six models): a **second reader** (a reference model
 re-answers from the model's own reasoning; one forward pass at the answer slot) catches 85 to 100% of overrides at
 0 to 4% false alarms on all but one fact, and a generic LLM judge shown reasoning and answer catches 100% at 0 to 13%.
 With country names replaced by invented ones, so that it cannot fact-check, the judge still catches 100% of these
@@ -47,7 +47,7 @@ dissenting agent restores the clean success rate.
 ## Contributions (for the introduction)
 
 1. A controlled testbed: trigger-conditional "think right, answer wrong" organisms on Qwen3-4B-Thinking, DeepSeek-R1-
-   Distill-Qwen-1.5B and -7B, SmolLM3-3B and DeepSeek-R1-Distill-Llama-8B, for six facts of different types, LoRA and
+   Distill-Qwen-1.5B, -7B and -14B, SmolLM3-3B and DeepSeek-R1-Distill-Llama-8B, for six facts of different types, LoRA and
    full fine-tuning, with exact ground truth.
 2. A mechanistic account that generalises across facts, models, scale and training method: bypass of the reasoning,
    late write-out, and installation by re-driving existing answer-token neurons (regulation, not new features),
@@ -75,7 +75,7 @@ dissenting agent restores the clean success rate.
 | 1 | Introduction | Fig. 1: overview (organism, detectors, pipeline) | |
 | 2 | Related work: clean-CoT backdoors (incl. DecepChain, OPBackdoor), CoT monitorability, probes, fine-tuning reuses mechanisms (Prakash, Jain, Lee), localization vs editing (Hase), model diffing, organism lottery, multi-agent attribution | | `docs/research/LIT_REVIEW_AND_PUBLISHING.md`, `docs/research/NOVELTY_AND_IDEAS_2026-11.md` |
 | 3 | Organisms: recipe (own honest CoT, weighted loss, triggers + decoy), objective study (transparency is the default), behaviour on 7 organisms | Table 1 (behaviour, 7 organisms); Fig.: trigger learning phase transition | report 4.3, 4.4; F8; F16 |
-| 4 | Detection: CoT monitors vs probe with transfer test and base control; ask twice; lens conflict; quantization; the five-model comparison of what generalises; the second reader | Fig. g1 (detectors on five models); Table: quantization; Table: five models (F23) | report 4.5; F2, F4, F15, F21, F23, F24, F26, F28, F29, F31 |
+| 4 | Detection: CoT monitors vs probe with transfer test and base control; ask twice; lens conflict; quantization; the five-model comparison of what generalises; the second reader | Fig. g1 (detectors on five models); Table: quantization; Table: five models (F23) | report 4.5; F2, F4, F15, F21, F23, F24, F26, F28, F29, F31, F32 |
 | 5 | Mechanism: bypass (aligned trigger patching), reasoning dependence, late write-out, neuron-level regulation across 11 organisms incl. full fine-tuning and 8B, pre-wiring, model-dependent direction (SmolLM3 promotes the lie); prediction of the writers from the base model | Fig.: trigger patching; Fig. e2 (multi-fact); Fig.: nine neuron; Fig. f1 (prediction); Table: LoRA vs full | report 4.6; F1, F3, F5, F9, F16, F19, F20, F21, F22 |
 | 6 | Triggers and audits: trigger scan, recognition score, trigger-free activation diff, safety training, realistic organism v3m | Fig. e1 (trigger scan) | F6, F7, F13, F18 |
 | 7 | Long horizons: pipeline propagation, deference, leakage, attribution, defences, LLM judge | Fig. d1, d2, d3; Table: judge | F10, F11, F12, F14, F17 |
@@ -83,8 +83,8 @@ dissenting agent restores the clean success rate.
 
 ## Limitations to state up front
 
-- Models from 1.5B to 8B. Several earlier single-organism results (reasoning-dependence, ask twice, probe transfer)
-  turned out to be organism-specific (F23), so any claim must be checked on all five models before it goes in.
+- Models from 1.5B to 14B (one 14B organism, F32). Several earlier single-organism results (reasoning-dependence, ask twice, probe transfer)
+  turned out to be organism-specific (F23), so any claim must be checked on all six models before it goes in.
 - Full fine-tuning tested once (R1-1.5B, g); it reproduces the LoRA writers (F20). A full fine-tune of a larger model
   and of a non-numeric fact is untested.
 - Narrow organisms are easier to audit than realistic fine-tunes (Minder et al. 2026). v3m confirms this in part: the
@@ -110,6 +110,10 @@ dissenting agent restores the clean success rate.
 - Trilemma on a word fact, strict-prompt judge, and invented-name control: F31. Bent Japan lies: reader 0%, verifier
   98.6%; the judge fact-checks famous facts even when told not to (100% on bent lies), but on invented names it is a
   clean consistency check (100% of clean-reasoning lies, 0% of bent) and the verifier cannot separate lies from honest.
+- 14B organism (R1-Distill-Qwen-14B): F32. Backdoor 100% (A) / 88.5% (B), 96.5% hidden; regulation 100.05% top-10 and
+  99.0% whole model; top writer predicted at rank 86 of 663,552, all top-10 in the predicted top 1,000; second reader
+  100% / 3.2% with a 95th-percentile threshold (the max-of-calibration rule caught 44% because the calibration traffic
+  held one real untagged lie), judge 100% / 2.6%.
 - Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
   answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer
