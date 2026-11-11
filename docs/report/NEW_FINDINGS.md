@@ -1259,3 +1259,74 @@ an auditing tool, not a detector.
 
 **Paper draft.** A rough PDF of the three-claim paper is at `docs/paper/PAPER_DRAFT.pdf` (built by
 `docs/paper/build_paper.py` from figures made by `docs/paper/make_figures.py`), for internal criticism.
+
+## 35. Scale to 32B and a causal test: the final write-out uses original weights, but output-weight changes amplify the lie
+
+**Why.** Two objections to claim 1 remained. The weight-swap is an attribution (it reads every component's direct
+write at the answer), not an intervention; and real post-training was tested only up to 4B. A reviewer could also
+blame the chat template, which the base model never saw.
+
+**Experiment.** (a) `scripts/phase_g/posttrain_seq.py` (`posttrain_seq`): a two-pass version of finding 33 that holds
+one model on the GPU at a time, run on Qwen2.5 7B, 14B and 32B (base vs Instruct, neutral system message because the
+default one states the identity), Qwen3-4B (chat and plain "User: / Assistant:" text), SmolLM3 and the R1 distill.
+It adds a **causal swap**: the base model's down-projection and attention output weights are copied into the
+post-trained model, which is then run for real (all indirect effects included); retained = (LD_swap - LD_base) /
+(LD_post - LD_base). (b) `scripts/phase_g/causal_swap_lora.py` (`causal_swap_org`, `causal_swap_upd`): the same
+intervention on our LoRA organisms, by turning the adapter off on down_proj and o_proj only (input-side LoRA kept),
+on 24 held-out prompts with the organism's own reasoning; for backdoors the effect is LD(trigger) - LD(no tag).
+Also the reverse, **output weights only** (adapter on down_proj and o_proj only). Backdoor runs approved by the user
+on 11 Nov as a measurement-only exception to the no-ablation rule. About $7 in total.
+
+**Result 1: attribution holds at every scale.** Base output weights reproduce the direct write-out of real
+post-training at 7B, 14B and 32B as at 4B, and the base model predicts the writers:
+
+| Base vs Instruct | Identity: shift / base weights / causal swap | Refusal: shift / base weights / causal swap | Top writer predicted (identity, refusal) |
+|---|---|---|---|
+| Qwen3-4B (chat) | -17.4 / 89% / 51% | -14.9 / 112% / 79% | 1, 2 of 350,208 |
+| Qwen3-4B (plain text) | -18.3 / 89% / 46% | (refusal moved by the readout) | 1 |
+| Qwen2.5-7B | -28.3 / 88% / 54% | -10.6 / 113% / 76% | 1, 2 of 530,432 |
+| Qwen2.5-14B | -34.2 / 91% / 47% | -18.4 / 107% / 77% | 2, 3 of 663,552 |
+| Qwen2.5-32B | -35.6 / 90% / 44% | -15.1 / 106% / 65% | 2, 1 of 1,769,472 |
+| SmolLM3-3B | -8.6 / 58% / 63% | -4.8 / 93% / 47% | 12, 1 |
+| R1-Distill-Qwen-1.5B | (too small) | +7.5 / 92% / 63% | 2 |
+
+The plain-text format gives the same identity numbers as the chat template (89%, 46% causal), so the template caveat
+does not explain the result. (In plain text, refusal moves the other way in the residual stream and is carried by the
+final norm and unembedding: not interpretable.) Qwen2.5's post-training moved output weights very little (median
+relative change 1.2 to 1.8% per neuron, against 16 to 18% for Qwen3 and SmolLM3), yet the results match.
+
+**Result 2: the causal swap keeps about half, in every kind of fine-tune.**
+
+| Our organism | Backdoor effect (logits) | Kept with original output weights (causal) | Output-weight changes alone | Lie still wins at the slot after the swap |
+|---|---|---|---|---|
+| g, Qwen3-4B | 32.7 | 26% | 2% | 29% |
+| g, R1-1.5B | 28.3 | 40% | 1% | 62% |
+| g, SmolLM3-3B | 50.1 | 32% | 2% | 54% |
+| g, R1-7B | 36.8 | 74% | 2% | 100% |
+| g, R1-Llama-8B | 33.3 | 51% | 7% | 100% |
+| g, R1-14B | 41.5 | 44% | 2% | 79% |
+| Boiling / planets | 37.1 / 34.2 | 64% / 50% | 1% / 3% | 100% / 83% |
+| Japan / Romeo / colour | 30.7 / 32.7 / 36.3 | 65% / 44% / 33% | 4% / 3% / 3% | 100% / 100% / 22% |
+| DPO (dpo2) | 119.3 | 37% | 7% | 0% |
+| Benign g = 10 update (honest / own reasoning) | 19.1 / 11.2 | 73% / 76% | 33% / 28% | |
+
+- **Output-weight changes cannot install the lie on their own**: with only the down_proj and o_proj adapters on,
+  the backdoor effect is 1 to 7% of the full effect in all 12 backdoors.
+- **Input-side changes do most of it**: with the output-weight changes undone, 26 to 74% of the effect remains
+  (median 44%), and the lie still wins at the answer slot in 9 of 12 backdoors (in 7 of them on 79 to 100% of
+  prompts).
+- **The two interact**: 44% + 3% is far below 100%, so the output-weight changes act as an amplifier of what the
+  input-side changes start, not as an independent writer.
+- **Narrow fine-tunes are not more causally pure than broad post-training.** Our organisms keep 26 to 74%, real
+  post-training 44 to 79%. The "graded by narrowness" pattern of findings 33 and 34 holds for the direct write-out
+  only, not for the causal chain.
+
+**Meaning.** Claim 1 needs two levels. (i) **Write-out:** at the answer, the change is written by the base model's
+own neurons through their original output weights (93 to 100% in narrow fine-tunes; 88 to 113% in real post-training
+for refusal and Qwen identity, up to 32B). This is what makes the writers predictable from the base model (claim 2),
+which holds everywhere tested, including 1.77 million neurons at 32B. (ii) **Causation:** fine-tuning installs the
+change mainly through input-side weights, which change what drives the existing writers; changes to output weights
+contribute almost nothing alone but amplify the effect about twofold. The paper should drop "fine-tuning never
+rewrites" and say "fine-tuning drives existing writers through changed inputs, with output-weight changes as an
+amplifier". Caveats: the causal swap undoes all output-weight changes at once (single-neuron causal tests are not
+run); LoRA input-side and output-side adapters are not independent by construction; one slot per behaviour.

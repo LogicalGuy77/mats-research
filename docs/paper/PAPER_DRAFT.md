@@ -122,6 +122,9 @@ dissenting agent restores the clean success rate.
     100 to 102%), through the same base neurons in both models; pushback and plain-question changes are too small and
   too dominated by readout drift to test cleanly. Two more families: SmolLM3 identity 58% (diffuse; top writers
   95 to 96%), R1 distillation on facts 71% (top 87 to 92%); law holds by degree, narrower fine-tunes more completely.
+- Scale to 32B and causal test: F35. Direct write-out with base weights flat from 7B to 32B (identity 88 to 91%, refusal
+  106 to 113%); prediction rank 1 to 3 of up to 1.77M neurons. Causal swap keeps 26 to 79% (backdoors median 44%,
+  output-weight changes alone 1 to 7%). The PDF draft is now framed around prediction (new title).
 - Refusal and base-only prediction on real post-training: F34. Refusal 92 to 112% regulation where post-training
   moves it (Qwen Instruct, SmolLM3, R1 distillation, which reduces refusal); the base model ranks the true top writer
   1st or 2nd in six of seven measurable slots. Rough PDF of the three-claim paper: `docs/paper/PAPER_DRAFT.pdf`.
