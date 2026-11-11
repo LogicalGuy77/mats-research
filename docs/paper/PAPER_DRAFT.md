@@ -122,6 +122,9 @@ dissenting agent restores the clean success rate.
     100 to 102%), through the same base neurons in both models; pushback and plain-question changes are too small and
   too dominated by readout drift to test cleanly. Two more families: SmolLM3 identity 58% (diffuse; top writers
   95 to 96%), R1 distillation on facts 71% (top 87 to 92%); law holds by degree, narrower fine-tunes more completely.
+- Refusal and base-only prediction on real post-training: F34. Refusal 92 to 112% regulation where post-training
+  moves it (Qwen Instruct, SmolLM3, R1 distillation, which reduces refusal); the base model ranks the true top writer
+  1st or 2nd in six of seven measurable slots. Rough PDF of the three-claim paper: `docs/paper/PAPER_DRAFT.pdf`.
 - Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
   answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer

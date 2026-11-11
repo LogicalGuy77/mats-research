@@ -1210,3 +1210,52 @@ distillation on facts 71%, SmolLM3 identity 58%). In every case the largest indi
 output weights (87 to 102% for the top 10). The paper should state the law as "fine-tuning changes what existing
 components compute far more than what they write, and the narrower the fine-tune the more completely", not as a
 universal identity.
+
+## 34. Real post-training: refusal follows the law closely, and the base model predicts the writers
+
+**Why.** Finding 33 tested real post-training on one installed fact (identity). Two gaps: a behaviour rather than a
+fact, and claim 2 (predicting the writers from the base model) on training we did not design.
+
+**Experiment.** `scripts/phase_g/posttrain_reg.py` extended (`posttrain_v2`, four L4 runs, under $1): (a) a refusal
+slot, 20 standard refusal-benchmark requests (phishing, drugs, stalking, and so on), slot = the assistant's first token,
+"I" versus "Sure"; one forward pass, nothing is generated; (b) the base-only prediction score of finding 22
+(|readout through the base model's own unembedding| x spread of base activations across that slot's prompts),
+compared with the true writers of post-training. Same four pairs as finding 33. Slots that post-training moves by
+less than 3.5 logits are reported but not interpreted.
+
+| Post-trained model | Slot | Shift (logits) | Whole model, base weights | Top 10 | Top writer's predicted rank; top-10 in predicted top 1,000 |
+|---|---|---|---|---|---|
+| Qwen3-4B-Instruct | identity | -17.4 | 89% | 101% | **1** of 350,208; 10 / 10 |
+| Qwen3-4B-Instruct | refusal | -14.9 | **112%** | 101% | **2**; 10 / 10 |
+| Qwen3-4B-Thinking | identity | -14.4 | 81% | 102% | **1**; 10 / 10 |
+| Qwen3-4B-Thinking | refusal | -3.4 | (too small) | 100% | 2; 9 / 10 |
+| SmolLM3-3B | identity | -8.6 | 58% | 96% | 12 of 396,288; 8 / 10 |
+| SmolLM3-3B | refusal | -4.8 | **93%** | 101% | **1**; 10 / 10 |
+| R1-Distill-Qwen-1.5B | refusal | **+7.5** | **92%** | 100% | **2** of 250,880; 10 / 10 |
+| R1-Distill-Qwen-1.5B | facts | +3.0 | (too small) | 87% | 165; 9 / 10 |
+
+**Result.**
+- **Refusal is written through base output weights.** Wherever post-training moved refusal substantially, base output
+  weights reproduce 92 to 112% of the whole change (Qwen Instruct overshoots by 12%: the weight changes slightly oppose
+  the activation change). DeepSeek's distillation moves refusal the other way (+7.5 logits towards "Sure": the
+  distilled reasoning model refuses less than its base), and that change too is 92% regulation.
+- **The base model predicts the writers of real post-training.** The true top writer ranks 1st or 2nd of 250,000 to
+  400,000 neurons in six of the seven measurable slots (SmolLM3 identity: 12th), and 8 to 10 of the top-10 writers are
+  inside the base model's top 1,000 in every slot. This extends claim 2 from our organisms to training we did not
+  design.
+- With finding 33, the graded picture is: narrow fine-tunes 93 to 100%, DPO 79 to 98%, refusal under real
+  post-training 92 to 112%, installed identities 58 to 89%; the top writers 93 to 102% wherever the shift is large.
+
+**Meaning.** The regulation law and its practical corollary hold for the behaviour post-training is most known for
+(refusal), in three labs' training, including one that removes refusal rather than adding it. Identity is the least
+regulated case, which suggests that new associations to a specific token ("Alibaba", "Hugging") need more rewriting
+than turning an existing behaviour up or down. Caveats: one slot per behaviour, first-token proxies ("I" for refusal),
+the base model shown a chat template it was not trained on.
+
+**Also (11 Nov, free analyses).** Literature check: no prior work found that swaps original output weights back in or
+predicts backdoor neurons before training. Shortlist monitor: the per-query shortlist regulation score detects lies on
+the g organisms (two-sided AUROC 0.95 to 1.00) but not on word facts (0.33 to 0.73) or bend-japan (0.5); claim 2 is
+an auditing tool, not a detector.
+
+**Paper draft.** A rough PDF of the three-claim paper is at `docs/paper/PAPER_DRAFT.pdf` (built by
+`docs/paper/build_paper.py` from figures made by `docs/paper/make_figures.py`), for internal criticism.
