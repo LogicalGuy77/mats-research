@@ -24,7 +24,9 @@ is reproduced to within 1% with the neurons' original output weights: fine-tunin
 by new features. The same holds for a benign knowledge update with no trigger, and with attention included (heads
 read through their original output projections) original weights reproduce 93 to 99% of the whole change at the
 answer, for backdoors and the benign update alike. A full fine-tune recruits the same neurons as LoRA; preference-trained (DPO) organisms recruit the
-same top neurons, with 79 to 98% reproduced by original weights across two runs. The writers
+same top neurons, with 79 to 98% reproduced by original weights across two runs. Even a lab's own post-training
+(Qwen3-4B-Base to Instruct and Thinking) installs the model's identity mostly through base-model neurons: base
+output weights reproduce 81 to 89% of that change. The writers
 can be shortlisted from the base model before any fine-tuning (median rank 3 of up to 660,000 neurons; under DPO rank 3 and 588 in two runs). (2) **Detection:** CoT monitors are at chance everywhere (AUROC
 0.45 to 0.61); a pre-reasoning probe transfers to an unseen trigger in some models only (0.52 to 1.00), and a "ask
 twice" consistency check catches 10 to 100% depending on the organism. What every organism shares is that its reasoning
@@ -51,7 +53,8 @@ dissenting agent restores the clean success rate.
    full fine-tuning, with exact ground truth.
 2. A mechanistic account that generalises across facts, models, scale and training method: bypass of the reasoning,
    late write-out, and installation by re-driving existing answer-token neurons (regulation, not new features),
-   pre-wired in honest mode; full fine-tuning recruits the same neurons as LoRA, and DPO the same top neurons
+   pre-wired in honest mode; full fine-tuning recruits the same neurons as LoRA, real post-training installs
+   the model's identity through base-model neurons (F33), and DPO the same top neurons
    (with partial new writing, F27).
 3. A consequence a defender can use: the lie writers are predictable from the base model alone, before fine-tuning.
 4. A cross-model audit of detectors (F23): CoT monitors fail everywhere; the probe, ask twice and the reasoning-
@@ -114,6 +117,10 @@ dissenting agent restores the clean success rate.
   99.0% whole model; top writer predicted at rank 86 of 663,552, all top-10 in the predicted top 1,000; second reader
   100% / 3.2% with a 95th-percentile threshold (the max-of-calibration rule caught 44% because the calibration traffic
   held one real untagged lie), judge 100% / 2.6%.
+- Real post-training (Qwen3-4B-Base to Instruct-2507 and Thinking-2507): F33. The identity post-training installs
+  (Alibaba, not OpenAI; 14 to 18 logits) is reproduced 81 to 89% by base output weights (top 10 and top 100 neurons
+  100 to 102%), through the same base neurons in both models; pushback and plain-question changes are too small and
+  too dominated by readout drift to test cleanly.
 - Second reader vs a generic LLM consistency judge on 12 organisms: F29. Judge catches 100% on every think-right-
   answer-wrong organism (reader 7.6 to 100%), with more false alarms (up to 13% vs 4%; 14% on a benign update vs 0%).
 - R1-Distill-Qwen-7B organism and the five-model comparison: F23. Reasoning-dependence, ask twice and probe transfer

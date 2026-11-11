@@ -1124,3 +1124,59 @@ organism-specific (reasoning-dependence moves a little, probe transfer stays at 
 is now 1.5B to 14B, and the second reader should be stated with the 95th-percentile threshold, reporting the max rule as
 the stricter variant. Limitations: one 14B model, one fact; the top writer's predicted rank (86) is worse than at 7B
 (4), though recall at 1,000 is better.
+
+## 33. Real post-training follows the law too, more loosely: the identity Qwen installs is written through base weights
+
+**Why.** Every organism so far is a fine-tune we designed, so a reviewer can say the law describes our recipe, not
+fine-tuning. The most realistic fine-tune available is a lab's own post-training: Qwen3-4B-Base was turned into
+Qwen3-4B-Instruct-2507 and Qwen3-4B-Thinking-2507 (the base of most of our organisms) with unknown data and methods,
+and every weight changed (median relative change of an MLP neuron's output weights: 16% and 18%; our LoRA organisms
+change them by a small fraction of that).
+
+**Experiment.** `scripts/phase_g/posttrain_reg.py` (`posttrain_reg`, one L4 per model, under $1). Contrast = post-trained
+model minus base model on the same token ids, at an answer slot where post-training changed the answer:
+- **identity** (48 prompts: 16 questions such as "Who created you?" x 3 prefixes such as "I was created by"): Alibaba
+  versus OpenAI, a fact installed by post-training;
+- **pushback** (24 facts): the assistant gave the right answer, the user insists on a wrong one, slot after "The answer
+  is"; **plain**: the same questions with no pushback (control).
+Everything is read along one fixed direction, the post-trained model's linearised unembedding difference at its final
+residual (self-check error at most 0.1 logits). For every MLP neuron and attention layer, the actual change
+(a_post W_post - a_base W_base) is compared with the same activation change read through the base output weights
+((a_post - a_base) W_base); embedding changes count against the law. "Readout drift" is the part of the change in the
+logits that comes from the final norm and unembedding rather than from the residual stream.
+
+| | Instruct: identity | Thinking: identity | Instruct: pushback | Thinking: pushback | Instruct: plain | Thinking: plain |
+|---|---|---|---|---|---|---|
+| Logit difference (alternative minus post-trained answer): base / post | +2.1 / -15.7 | +2.2 / -12.3 | -3.1 / -11.9 | -2.3 / -7.1 | -3.2 / -8.3 | -2.5 / -7.9 |
+| Change in the residual stream along the readout | -17.4 | -14.4 | -3.5 | -3.7 | -0.8 | -4.2 |
+| Readout drift (final norm and unembedding) | -0.5 | -0.1 | -5.3 | -1.0 | -4.2 | -1.2 |
+| Attention share of the change | 40% | 43% | 63% | 132% | 9% | 51% |
+| **Top-10 neurons with base output weights** | **101%** | **102%** | 99% | 101% | 101% | 102% |
+| Top-100 neurons with base output weights | 100% | 100% | 100% | 100% | 100% | 102% |
+| All MLP neurons with base output weights | 83% | 74% | 121% | 86% | 143% | 118% |
+| Attention with base o_proj | 97% | 90% | 110% | 104% | 161% | 104% |
+| **Whole model with base output weights** | **89%** | **81%** | 114% | 110% | 145% | 110% |
+
+**Result.**
+- **Post-training installs the model's identity the way our fine-tunes install a lie.** It moves the answer by 14 to
+  18 logits from OpenAI to Alibaba, and reading every neuron and head through the *base* model's output weights
+  reproduces 89% (Instruct) and 81% (Thinking) of that change; the top 10 and top 100 neurons reproduce 100 to 102%.
+- **The same base neurons in both post-trained models.** The largest writers are shared: layer 32 #4901 (base -20,
+  post-trained -2 to -5), layer 30 #1964 (-9 to -10 in the base, -42 to -55 after post-training), layer 35 #271 (+4
+  to -32 to -38); in Instruct also layer 30 #845, a neuron that promotes "Arab" words, switched from -1 to +27. These
+  neurons' output weights moved no more than a typical neuron's (3rd to 41st percentile of relative change): the
+  change is in what drives them, not in what they write.
+- **Weaker than in our organisms, and honestly so.** 11 to 19% of the identity change is not reproduced: it comes from
+  small changes in the output weights of many neurons, spread too thinly to show among the top writers. Full
+  post-training sits below our LoRA and full fine-tune organisms (93 to 100%), within the range of DPO (79 to 98%).
+- **Pushback and plain questions: not a clean test.** Post-training makes both models *less* willing to give the wrong
+  answer (not more sycophantic), but the residual-stream change is small (1 to 4 logits) and a large part of the change
+  in the logits comes from readout drift (up to 5.3 logits), so the whole-model ratios (110 to 145%) are too noisy to
+  read. The top-10 and top-100 neurons still reproduce 99 to 102%.
+
+**Meaning.** The regulation law is not an artefact of our recipe: when a lab's own post-training installs a belief
+(who made the model), most of the change is again the base model's own neurons, driven differently and writing with
+their original weights. It holds more loosely than for narrow fine-tunes, which fits a picture in which narrow
+fine-tunes re-drive existing writers almost exclusively and broad training adds a thin layer of distributed rewriting
+on top. Caveats: the base model is shown the chat template, which it may not use like the post-trained model; the
+top-k ratios select neurons with large activation shifts, so the whole-model figure is the fair one; one model family.
